@@ -23,16 +23,16 @@ void main() {
     debugPrint('Flutter error: ${details.exception}');
   };
 
-  runApp(const GameBoxApp());
+  runApp(const PlaayzApp());
 }
 
-class GameBoxApp extends StatelessWidget {
-  const GameBoxApp({super.key});
+class PlaayzApp extends StatelessWidget {
+  const PlaayzApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'GameBox',
+      title: 'Plaayz',
       debugShowCheckedModeBanner: false,
       theme: GameTheme.darkTheme,
       home: const HomeScreen(),
