@@ -310,13 +310,13 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
         _changeDirection(dir);
       },
       child: Container(
-        width: 48, height: 48,
+        width: 72, height: 72,
         decoration: BoxDecoration(
           color: GameTheme.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: GameTheme.border),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: GameTheme.border, width: 1.5),
         ),
-        child: Icon(icon, color: GameTheme.accent, size: 32),
+        child: Icon(icon, color: GameTheme.accent, size: 44),
       ),
     );
   }
@@ -373,7 +373,7 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
           builder: (context, constraints) {
             // Calculate grid to fill available space
             final availW = constraints.maxWidth - 24; // 12px padding each side
-            final dpadHeight = _useDpad ? 160.0 : 0.0;
+            final dpadHeight = _useDpad ? 240.0 : 0.0;
             final availH = constraints.maxHeight - 80 - dpadHeight; // score bar + dpad + padding
 
             // Determine cell size and grid dimensions
@@ -602,7 +602,7 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               _dpadButton(Icons.arrow_left_rounded, Direction.left),
-                              const SizedBox(width: 48),
+                              const SizedBox(width: 72),
                               _dpadButton(Icons.arrow_right_rounded, Direction.right),
                             ],
                           ),
