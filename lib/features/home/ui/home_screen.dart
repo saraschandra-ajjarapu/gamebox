@@ -40,7 +40,7 @@ class HomeScreen extends StatelessWidget {
                             width: 48, height: 48, fit: BoxFit.cover),
                         ),
                         const SizedBox(width: 12),
-                        const Text('Plaayz',
+                        const Text('GameBox',
                           style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800,
                             color: GameTheme.textPrimary, letterSpacing: -0.5)),
                       ],
