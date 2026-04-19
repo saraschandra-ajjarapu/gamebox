@@ -24,6 +24,9 @@ class _WordleScreenState extends State<WordleScreen> with TickerProviderStateMix
   bool _gameOver = false;
   bool _won = false;
   String _message = '';
+  int _hintsUsed = 0;
+  static const int _maxHints = 2;
+  final Set<int> _revealedPositions = {};
   int _streak = 0;
   int _bestStreak = 0;
   int _gamesPlayed = 0;
@@ -78,6 +81,8 @@ class _WordleScreenState extends State<WordleScreen> with TickerProviderStateMix
     _guesses = [];
     _currentGuess = '';
     _gameOver = false;
+    _hintsUsed = 0;
+    _revealedPositions.clear();
     _won = false;
     _message = '';
     _keyStates.clear();
@@ -197,6 +202,41 @@ class _WordleScreenState extends State<WordleScreen> with TickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
+  void _useHint() {
+    if (_hintsUsed >= _maxHints || _gameOver) return;
+
+    // Find positions that haven't been revealed yet and aren't already correctly guessed
+    final unrevealed = <int>[];
+    for (int i = 0; i < _wordLength; i++) {
+      if (_revealedPositions.contains(i)) continue;
+      // Check if this position was already correctly guessed
+      bool alreadyCorrect = false;
+      for (final guess in _guesses) {
+        if (guess[i] == _answer[i]) {
+          alreadyCorrect = true;
+          break;
+        }
+      }
+      if (!alreadyCorrect) unrevealed.add(i);
+    }
+
+    if (unrevealed.isEmpty) {
+      setState(() => _message = 'No more letters to reveal!');
+      return;
+    }
+
+    // Reveal a random unrevealed position
+    final pos = unrevealed[Random().nextInt(unrevealed.length)];
+    setState(() {
+      _hintsUsed++;
+      _revealedPositions.add(pos);
+      _message = 'Hint: Position ${pos + 1} is "${_answer[pos]}" ($_hintsUsed/$_maxHints used)';
+      // Also mark the key as present on keyboard
+      _keyStates[_answer[pos]] = TileState.present;
+    });
+    HapticFeedback.mediumImpact();
+  }
+
     return Scaffold(
       backgroundColor: GameTheme.background,
       appBar: AppBar(
@@ -205,6 +245,26 @@ class _WordleScreenState extends State<WordleScreen> with TickerProviderStateMix
           icon: const Icon(Icons.arrow_back_ios_rounded, color: GameTheme.textPrimary),
           onPressed: () => Navigator.pop(context)),
         actions: [
+          // Hint button
+          if (!_gameOver)
+            Stack(
+              children: [
+                IconButton(
+                  icon: Icon(Icons.lightbulb_rounded,
+                    color: _hintsUsed < _maxHints ? GameTheme.accent : GameTheme.textSecondary),
+                  onPressed: _hintsUsed < _maxHints ? _useHint : null),
+                Positioned(right: 6, top: 6,
+                  child: Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      color: GameTheme.accent,
+                      shape: BoxShape.circle),
+                    child: Text('${_maxHints - _hintsUsed}',
+                      style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.black)),
+                  ),
+                ),
+              ],
+            ),
           IconButton(
             icon: const Icon(Icons.bar_chart_rounded, color: GameTheme.textSecondary),
             onPressed: _showStats),
