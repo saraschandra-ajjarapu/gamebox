@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'core/theme/game_theme.dart';
@@ -23,16 +22,16 @@ void main() {
     debugPrint('Flutter error: ${details.exception}');
   };
 
-  runApp(const PlaayzApp());
+  runApp(const GameBoxApp());
 }
 
-class PlaayzApp extends StatelessWidget {
-  const PlaayzApp({super.key});
+class GameBoxApp extends StatelessWidget {
+  const GameBoxApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Plaayz',
+      title: 'GameBox',
       debugShowCheckedModeBanner: false,
       theme: GameTheme.darkTheme,
       home: const HomeScreen(),

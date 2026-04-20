@@ -312,11 +312,15 @@ class _SudokuScreenState extends State<SudokuScreen>
                       style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
                         color: _notesMode ? GameTheme.accent : GameTheme.textSecondary))])))),
 
-            Padding(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            Padding(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Row(
                 children: [
-                  ...List.generate(9, (i) => _numBtn(i + 1)),
-                  _numBtn(0, icon: Icons.backspace_outlined),
+                  ...List.generate(9, (i) => Expanded(child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                    child: _numBtn(i + 1)))),
+                  Expanded(child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                    child: _numBtn(0, icon: Icons.backspace_outlined))),
                 ])),
           ],
 
@@ -403,7 +407,7 @@ class _SudokuScreenState extends State<SudokuScreen>
   Widget _numBtn(int n, {IconData? icon}) {
     return GestureDetector(
       onTap: () => _onNumber(n),
-      child: Container(width: 34, height: 44,
+      child: Container(height: 44,
         decoration: BoxDecoration(color: GameTheme.surface, borderRadius: BorderRadius.circular(8),
           border: Border.all(color: GameTheme.border)),
         child: Center(child: icon != null

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/game_theme.dart';
 import '../../../core/utils/game_help.dart';
+import '../../../core/widgets/high_score_dialog.dart';
 
 class SimonScreen extends StatefulWidget {
   const SimonScreen({super.key});
@@ -92,9 +93,16 @@ class _SimonScreenState extends State<SimonScreen> {
     } else {
       // Wrong!
       _gameOver = true; _playing = false;
-      if (_round - 1 > _bestScore) { _bestScore = _round - 1; _saveBestScore(); }
+      final finalScore = _round - 1;
+      if (finalScore > _bestScore) { _bestScore = finalScore; _saveBestScore(); }
       HapticFeedback.heavyImpact();
       setState(() {});
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        HighScoreDialog.submitIfQualifies(
+          context: context, gameId: 'simon', gameName: 'Simon Says',
+          score: finalScore, scoreLabel: 'Level');
+      });
     }
   }
 

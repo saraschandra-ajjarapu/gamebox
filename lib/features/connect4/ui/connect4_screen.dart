@@ -418,7 +418,7 @@ class _Connect4ScreenState extends State<Connect4Screen> {
         actions: [IconButton(icon: const Icon(Icons.refresh_rounded, color: GameTheme.accent),
           onPressed: () { _initBoard(); setState(() {}); if (_vsAI && _turn != _humanDisc) _scheduleAI(); })]),
       body: SafeArea(child: LayoutBuilder(builder: (context, constraints) {
-        final boardW = constraints.maxWidth - 32;
+        final boardW = min(constraints.maxWidth - 32, 820.0);
         final cellSize = boardW / _cols;
         final boardH = cellSize * _rows;
 

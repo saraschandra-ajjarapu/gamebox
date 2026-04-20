@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/game_theme.dart';
 import '../../../core/utils/game_help.dart';
+import '../../../core/widgets/high_score_dialog.dart';
 import '../data/quiz_questions.dart';
 
 enum QuizMode { menu, topicSelect, playing, results }
@@ -186,6 +187,15 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       _mode = QuizMode.results;
       _timer?.cancel();
       setState(() {});
+      if (!_isMultiplayer && _scores.isNotEmpty) {
+        final finalScore = _scores[0];
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          HighScoreDialog.submitIfQualifies(
+            context: context, gameId: 'quiz', gameName: 'Quiz',
+            score: finalScore);
+        });
+      }
       return;
     }
 
@@ -438,17 +448,17 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
 
               // Score bar
               Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                padding: const EdgeInsets.only(bottom: 8, left: 12, right: 12),
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 16,
+                  runSpacing: 4,
                   children: [
-                    for (int i = 0; i < _scores.length; i++) ...[
-                      if (i > 0) const SizedBox(width: 16),
+                    for (int i = 0; i < _scores.length; i++)
                       Text('${_playerNames[i]}: ${_scores[i]}',
                         style: TextStyle(fontSize: 13,
                           fontWeight: i == _currentPlayer ? FontWeight.w700 : FontWeight.normal,
                           color: i == _currentPlayer ? GameTheme.accent : GameTheme.textSecondary)),
-                    ],
                   ],
                 ),
               ),
@@ -516,8 +526,6 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   Widget _buildResults() {
     final winner = _scores.indexOf(_scores.reduce(max));
     final isSolo = _scores.length == 1;
-    final totalQ = _isMultiplayer ? min(_questions.length, 25) : min(_questions.length, 10);
-    final maxScore = totalQ * 25; // max 10+15 per question
 
     return Scaffold(
       backgroundColor: GameTheme.background,

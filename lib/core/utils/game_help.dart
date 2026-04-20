@@ -152,6 +152,60 @@ Take turns drawing lines between dots.
 - The player with the most boxes wins!
 
 Tip: Avoid drawing the 3rd side of a box — your opponent will take it.''',
+
+    'Tetris': '''
+Stack falling tetrominoes and clear full horizontal lines.
+
+Controls (swipe):
+- Swipe left/right — move piece
+- Swipe down — soft drop (+1 pt per row)
+- Swipe up — hard drop (+2 pts per row)
+- Tap — rotate
+
+Or toggle the D-Pad in the top bar for buttons.
+
+Scoring (multiplied by level):
+- 1 line = 40, 2 = 100, 3 = 300, 4 (Tetris!) = 1200
+- Every 10 lines raises the level — speed increases.
+
+Tips:
+- Keep one column open and save I-pieces for Tetrises.
+- The dim ghost shows where the piece will land.''',
+
+    'Stack': '''
+Stack blocks as high as you can.
+
+- A block slides back and forth above the tower
+- Tap anywhere to drop it onto the tower below
+- Any part hanging over the edge is trimmed away — the next block is only as wide as what remains
+- Miss the tower entirely → game over
+
+Tips:
+- Watch the sliding rhythm — tap a fraction of a beat before center
+- A PERFECT drop (aligned within a hair) keeps the full width and builds a streak
+- Speed rises steadily — stay relaxed''',
+
+    'Pac-Man': '''
+Eat every dot in the maze while avoiding ghosts.
+
+Controls:
+- Swipe in any direction to turn
+- Or toggle the D-Pad for buttons
+
+Rules:
+- Small dots = 10 pts
+- Power pellets (big dots) = 50 pts and scare all ghosts briefly — eat them for bonus points
+- Bonus fruit (🍒) appears once per wave after half the dots are eaten — +100 pts if you grab it before it disappears
+- Ghosts respawn at the center house
+- Clear all dots to win the wave; each wave uses a different maze
+
+Waves:
+1. Classic
+2. Cross Quarters
+3. Open Plaza
+(rotates)
+
+Tip: Use the tunnel edges to escape when a ghost closes in.''',
   };
 
   static void show(BuildContext context, String gameName) {

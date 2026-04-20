@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/game_theme.dart';
 import '../../../core/utils/game_help.dart';
+import '../../../core/widgets/high_score_dialog.dart';
 
 class SnakeGameScreen extends StatefulWidget {
   const SnakeGameScreen({super.key});
@@ -23,8 +24,30 @@ enum FoodType {
   timed,       // Bonus food — disappears after 30 seconds
 }
 
+enum SnakeDifficulty { easy, normal, hard }
+
+extension _Diff on SnakeDifficulty {
+  String get label => switch (this) {
+    SnakeDifficulty.easy => 'Easy',
+    SnakeDifficulty.normal => 'Normal',
+    SnakeDifficulty.hard => 'Hard',
+  };
+  // Starting tick interval — lower = faster.
+  int get baseTickMs => switch (this) {
+    SnakeDifficulty.easy => 340,
+    SnakeDifficulty.normal => 260,
+    SnakeDifficulty.hard => 180,
+  };
+  // Floor tick (max speed within a run).
+  int get floorMs => switch (this) {
+    SnakeDifficulty.easy => 220,
+    SnakeDifficulty.normal => 170,
+    SnakeDifficulty.hard => 110,
+  };
+}
+
 class _SnakeGameScreenState extends State<SnakeGameScreen> {
-  static const int _baseTickMs = 220; // starting speed
+  SnakeDifficulty _difficulty = SnakeDifficulty.normal;
 
   int _rows = 20;
   int _cols = 20;
@@ -62,18 +85,34 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
 
   Future<void> _loadBestScore() async {
     final prefs = await SharedPreferences.getInstance();
-    setState(() => _bestScore = prefs.getInt('best_score_snake') ?? 0);
+    final diffIdx = prefs.getInt('snake_difficulty') ?? 1;
+    setState(() {
+      _bestScore = prefs.getInt('best_score_snake_${SnakeDifficulty.values[diffIdx].name}') ?? 0;
+      _difficulty = SnakeDifficulty.values[diffIdx];
+    });
   }
 
   Future<void> _saveBestScore() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('best_score_snake', _bestScore);
+    await prefs.setInt('best_score_snake_${_difficulty.name}', _bestScore);
+  }
+
+  Future<void> _setDifficulty(SnakeDifficulty d) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('snake_difficulty', d.index);
+    if (!mounted) return;
+    setState(() {
+      _difficulty = d;
+      _bestScore = prefs.getInt('best_score_snake_${d.name}') ?? 0;
+    });
   }
 
   Duration get _currentTick {
-    // Gentle speed increase every 50 points — relaxed pacing
+    final base = _difficulty.baseTickMs;
+    final floor = _difficulty.floorMs;
+    // Speed ramps up with score; floor differs by difficulty.
     final speedLevel = _score ~/ 50;
-    final ms = (_baseTickMs - speedLevel * 8).clamp(120, _baseTickMs);
+    final ms = (base - speedLevel * 6).clamp(floor, base);
     return Duration(milliseconds: ms);
   }
 
@@ -293,6 +332,16 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
     if (_score > _bestScore) { _bestScore = _score; _saveBestScore(); }
     HapticFeedback.heavyImpact();
     setState(() {});
+    final scoreNow = _score;
+    final diff = _difficulty;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      HighScoreDialog.submitIfQualifies(
+        context: context,
+        gameId: 'snake_${diff.name}',
+        gameName: 'Snake (${diff.label})',
+        score: scoreNow);
+    });
   }
 
   void _changeDirection(Direction newDir) {
@@ -301,6 +350,30 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
     if (_direction == Direction.left && newDir == Direction.right) return;
     if (_direction == Direction.right && newDir == Direction.left) return;
     _nextDirection = newDir;
+  }
+
+  Widget _difficultyChip(SnakeDifficulty d) {
+    final selected = _difficulty == d;
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        _setDifficulty(d);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        decoration: BoxDecoration(
+          color: selected ? GameTheme.accent : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: GameTheme.accent, width: 1.5),
+        ),
+        child: Text(d.label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: selected ? Colors.white : GameTheme.accent,
+          )),
+      ),
+    );
   }
 
   Widget _dpadButton(IconData icon, Direction dir) {
@@ -371,35 +444,40 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            // Calculate grid to fill available space
-            final availW = constraints.maxWidth - 24; // 12px padding each side
-            final dpadHeight = _useDpad ? 240.0 : 0.0;
-            final availH = constraints.maxHeight - 80 - dpadHeight; // score bar + dpad + padding
+            // Calculate grid to fill available space — identical gameplay on all devices
+            final availW = min(constraints.maxWidth - 24, 560.0); // cap width for tablets
+            final dpadHeight = _useDpad ? 232.0 : 0.0; // 72 * 3 buttons + 8 + 8 padding
+            final availH = constraints.maxHeight - 80 - dpadHeight;
 
-            // Determine cell size and grid dimensions
-            final maxCellSize = 22.0; // cap cell size for phones
-            final minCellSize = 14.0; // min for iPads with many cells
-
-            // Calculate how many cells fit
-            double cellSize;
-            if (availW / 20 > maxCellSize) {
-              // iPad or large screen — use more cells
-              cellSize = max(minCellSize, min(maxCellSize, availW / 25));
-              _cols = (availW / cellSize).floor();
-              _rows = (availH / cellSize).floor();
-            } else {
-              // iPhone — use available width
-              cellSize = availW / 20;
-              _cols = 20;
-              _rows = (availH / cellSize).floor();
-            }
-
-            // Clamp grid size
-            _cols = _cols.clamp(12, 40);
-            _rows = _rows.clamp(16, 50);
+            // Fixed 20 columns; rows scale with height. Keeps difficulty consistent phone→iPad.
+            _cols = 20;
+            final cellSize = availW / 20;
+            _rows = (availH / cellSize).floor().clamp(16, 30);
 
             final gridW = _cols * cellSize;
             final gridH = _rows * cellSize;
+
+            // If grid shrank mid-game, reposition food/snake so they stay in bounds
+            if (_started && !_gameOver) {
+              final foodOut = _food.$1 >= _rows || _food.$2 >= _cols;
+              final snakeOut = _snake.any((p) => p.$1 >= _rows || p.$2 >= _cols);
+              final specOut = _specialFood != null &&
+                  (_specialFood!.$1 >= _rows || _specialFood!.$2 >= _cols);
+              final rockOut = _rockFood != null &&
+                  (_rockFood!.$1 >= _rows || _rockFood!.$2 >= _cols);
+              if (foodOut || snakeOut || specOut || rockOut) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (!mounted) return;
+                  setState(() {
+                    if (snakeOut) {
+                      _snake = _snake.map((p) => (p.$1 % _rows, p.$2 % _cols)).toList();
+                    }
+                    if (foodOut) _placeFood();
+                    if (specOut || rockOut) _clearSpecial();
+                  });
+                });
+              }
+            }
 
             return Column(
               children: [
@@ -412,7 +490,7 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
                       Text('Score: $_score  ',
                           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700,
                               color: GameTheme.accent)),
-                      Text('Best: $_bestScore',
+                      Text('Best: $_bestScore (${_difficulty.label})',
                           style: const TextStyle(fontSize: 14, color: GameTheme.textSecondary)),
                     ],
                   ),
@@ -536,9 +614,9 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
                             if (!_started || _gameOver)
                               Center(
                                 child: Container(
-                                  padding: const EdgeInsets.all(30),
+                                  padding: const EdgeInsets.all(26),
                                   decoration: BoxDecoration(
-                                    color: GameTheme.background.withValues(alpha: 0.9),
+                                    color: GameTheme.background.withValues(alpha: 0.92),
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   child: Column(
@@ -557,7 +635,20 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
                                         Text('Score: $_score',
                                             style: const TextStyle(color: GameTheme.textSecondary, fontSize: 16)),
                                       ],
-                                      const SizedBox(height: 20),
+                                      const SizedBox(height: 16),
+                                      const Text('Difficulty',
+                                        style: TextStyle(fontSize: 12,
+                                          fontWeight: FontWeight.w700,
+                                          letterSpacing: 1.2,
+                                          color: GameTheme.textSecondary)),
+                                      const SizedBox(height: 8),
+                                      Row(mainAxisSize: MainAxisSize.min, children: [
+                                        for (final d in SnakeDifficulty.values) ...[
+                                          _difficultyChip(d),
+                                          if (d != SnakeDifficulty.hard) const SizedBox(width: 6),
+                                        ],
+                                      ]),
+                                      const SizedBox(height: 16),
                                       ElevatedButton(
                                         onPressed: _startGame,
                                         style: ElevatedButton.styleFrom(
@@ -573,9 +664,9 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
                                         ),
                                       ),
                                       if (!_gameOver) ...[
-                                        const SizedBox(height: 12),
+                                        const SizedBox(height: 10),
                                         Text(_useDpad ? 'Use D-Pad to control' : 'Swipe to control',
-                                            style: const TextStyle(color: GameTheme.textSecondary, fontSize: 13)),
+                                            style: const TextStyle(color: GameTheme.textSecondary, fontSize: 12)),
                                       ],
                                     ],
                                   ),
@@ -591,24 +682,21 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
                 // D-Pad controls
                 if (_useDpad && _started && !_gameOver)
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: SizedBox(
-                      height: 150,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _dpadButton(Icons.arrow_drop_up_rounded, Direction.up),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              _dpadButton(Icons.arrow_left_rounded, Direction.left),
-                              const SizedBox(width: 72),
-                              _dpadButton(Icons.arrow_right_rounded, Direction.right),
-                            ],
-                          ),
-                          _dpadButton(Icons.arrow_drop_down_rounded, Direction.down),
-                        ],
-                      ),
+                    padding: const EdgeInsets.only(top: 8, bottom: 8),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _dpadButton(Icons.arrow_drop_up_rounded, Direction.up),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _dpadButton(Icons.arrow_left_rounded, Direction.left),
+                            const SizedBox(width: 72),
+                            _dpadButton(Icons.arrow_right_rounded, Direction.right),
+                          ],
+                        ),
+                        _dpadButton(Icons.arrow_drop_down_rounded, Direction.down),
+                      ],
                     ),
                   )
                 else

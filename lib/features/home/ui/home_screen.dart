@@ -14,6 +14,11 @@ import '../../simon/ui/simon_screen.dart';
 import '../../dots_boxes/ui/dots_boxes_screen.dart';
 import '../../quiz/ui/quiz_screen.dart';
 import '../../wordle/ui/wordle_screen.dart';
+import '../../tetris/ui/tetris_screen.dart';
+import '../../pacman/ui/pacman_screen.dart';
+import '../../stack/ui/stack_screen.dart';
+import '../../leaderboard/ui/leaderboard_screen.dart';
+import '../../about/ui/about_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -40,25 +45,47 @@ class HomeScreen extends StatelessWidget {
                             width: 48, height: 48, fit: BoxFit.cover),
                         ),
                         const SizedBox(width: 12),
-                        const Text('Plaayz',
-                          style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800,
-                            color: GameTheme.textPrimary, letterSpacing: -0.5)),
+                        const Expanded(
+                          child: Text('GameBox',
+                            style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800,
+                              color: GameTheme.textPrimary, letterSpacing: -0.5)),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.emoji_events_rounded,
+                            color: GameTheme.gold),
+                          tooltip: 'Leaderboard',
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            Navigator.push(context, MaterialPageRoute(
+                              builder: (_) => const LeaderboardScreen()));
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.info_outline_rounded,
+                            color: GameTheme.accent),
+                          tooltip: 'About',
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            Navigator.push(context, MaterialPageRoute(
+                              builder: (_) => const AboutScreen()));
+                          },
+                        ),
                       ],
                     ),
                     const SizedBox(height: 6),
-                    const Text('GameBox — Fun Games',
+                    const Text('Fun Games',
                       style: TextStyle(fontSize: 15, color: GameTheme.textSecondary)),
                   ],
                 ),
               ),
             ),
 
-            // Games grid
+            // Games grid — auto-fits columns based on card width (2 on phones, 3-4 on tablets)
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 10),
               sliver: SliverGrid(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2, childAspectRatio: 0.85,
+                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 280, childAspectRatio: 0.85,
                   crossAxisSpacing: 14, mainAxisSpacing: 14),
                 delegate: SliverChildListDelegate([
                   _GameCard(title: '2048', subtitle: 'Slide & merge',
@@ -121,6 +148,21 @@ class HomeScreen extends StatelessWidget {
                     gradient: const [Color(0xFF538D4E), Color(0xFF3A6B35)],
                     players: '1 Player',
                     onTap: () => _push(context, const WordleScreen())),
+                  _GameCard(title: 'Tetris', subtitle: 'Stack & clear',
+                    icon: Icons.view_module_rounded, helpName: 'Tetris',
+                    gradient: const [Color(0xFF4ECDC4), Color(0xFF2E7D8F)],
+                    players: '1 Player',
+                    onTap: () => _push(context, const TetrisScreen())),
+                  _GameCard(title: 'Pac-Man', subtitle: 'Eat & escape',
+                    icon: Icons.pie_chart_rounded, helpName: 'Pac-Man',
+                    gradient: const [Color(0xFFFFD54F), Color(0xFFFFA000)],
+                    players: '1 Player',
+                    onTap: () => _push(context, const PacManScreen())),
+                  _GameCard(title: 'Stack', subtitle: 'Tap to stack',
+                    icon: Icons.view_agenda_rounded, helpName: 'Stack',
+                    gradient: const [Color(0xFF7AA5E0), Color(0xFFBA9BD6)],
+                    players: '1 Player',
+                    onTap: () => _push(context, const StackGameScreen())),
                 ]),
               ),
             ),
@@ -214,10 +256,10 @@ class _GameCardState extends State<_GameCard> {
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(
                   children: [
-                    Container(padding: const EdgeInsets.all(10),
+                    Container(padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12)),
-                      child: Icon(widget.icon, color: Colors.white, size: 26)),
+                      child: Icon(widget.icon, color: Colors.white, size: 24)),
                     const Spacer(),
                     GestureDetector(
                       onTap: () {
@@ -225,14 +267,14 @@ class _GameCardState extends State<_GameCard> {
                         GameHelp.show(context, widget.helpName);
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(8)),
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.help_outline_rounded, color: Colors.white, size: 14),
+                            Icon(Icons.help_outline_rounded, color: Colors.white, size: 13),
                             SizedBox(width: 3),
                             Text('How to Play',
                               style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600,

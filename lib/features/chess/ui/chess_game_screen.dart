@@ -1,10 +1,28 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/game_theme.dart';
 import '../../../core/utils/game_help.dart';
 import '../../../core/services/wifi_game_service.dart';
 import '../../../core/widgets/wifi_lobby.dart';
+
+// AI rating per difficulty level (ELO). Higher = stronger AI.
+const _aiRatings = <int>[300, 800, 1500];
+
+// Derive minimax search depth from AI rating.
+int _depthForRating(int rating) {
+  if (rating < 500) return 1;
+  if (rating < 1000) return 2;
+  if (rating < 1400) return 3;
+  return 4;
+}
+
+// Standard ELO update. score: 1=win, 0.5=draw, 0=loss.
+int _eloChange(int playerRating, int opponentRating, double score) {
+  final expected = 1.0 / (1.0 + math.pow(10, (opponentRating - playerRating) / 400.0));
+  return (32 * (score - expected)).round();
+}
 
 // ── Data types ────────────────────────────────────────────────────────────
 
@@ -111,6 +129,48 @@ const _boardThemes = [
     whitePiece: Color(0xFFFFFFFF),
     blackPiece: Color(0xFF1A1A2E),
   ),
+  BoardTheme(
+    name: 'Ocean',
+    lightSquare: Color(0xFFD9ECF2),
+    darkSquare: Color(0xFF417B9E),
+    whitePiece: Color(0xFFFFFFFF),
+    blackPiece: Color(0xFF0B2A40),
+  ),
+  BoardTheme(
+    name: 'Forest',
+    lightSquare: Color(0xFFE6E4C6),
+    darkSquare: Color(0xFF3E6B3A),
+    whitePiece: Color(0xFFFFF9E0),
+    blackPiece: Color(0xFF1C2A1A),
+  ),
+  BoardTheme(
+    name: 'Lava',
+    lightSquare: Color(0xFFFFE4C2),
+    darkSquare: Color(0xFFC04A1A),
+    whitePiece: Color(0xFFFFF2E0),
+    blackPiece: Color(0xFF2B0F05),
+  ),
+  BoardTheme(
+    name: 'Neon',
+    lightSquare: Color(0xFF2D1E3F),
+    darkSquare: Color(0xFF8B1FD6),
+    whitePiece: Color(0xFF00FFD1),
+    blackPiece: Color(0xFFFF2D95),
+  ),
+  BoardTheme(
+    name: 'Wood',
+    lightSquare: Color(0xFFEED9B0),
+    darkSquare: Color(0xFF8B5A2B),
+    whitePiece: Color(0xFFFFF4DC),
+    blackPiece: Color(0xFF2A1A0A),
+  ),
+  BoardTheme(
+    name: 'Marble',
+    lightSquare: Color(0xFFF2F0ED),
+    darkSquare: Color(0xFF707078),
+    whitePiece: Color(0xFFFFFFFF),
+    blackPiece: Color(0xFF1E1E26),
+  ),
 ];
 
 // ── Main screen ───────────────────────────────────────────────────────────
@@ -143,9 +203,19 @@ class _ChessGameScreenState extends State<ChessGameScreen>
   bool _showWifiLobby = false;
   PieceColor _humanColor = PieceColor.white;
   int _themeIndex = 0;
-  int _pieceStyle = 0; // 0=Classic, 1=Outlined, 2=Minimal
+  int _pieceStyle = 0; // 0=Classic, 1=Outlined, 2=Minimal, ...
   int _aiDifficulty = 1; // 0=Easy, 1=Medium, 2=Hard
   bool _aiThinking = false;
+
+  // Rating system
+  int _playerRating = 400;
+  int _lastRatingDelta = 0;
+  bool _ratingAppliedThisGame = false;
+  int get _currentAiRating => _aiRatings[_aiDifficulty];
+
+  // Hint (Easy mode only)
+  (int, int)? _hintFrom;
+  (int, int)? _hintTo;
 
   // Capture animation
   AnimationController? _captureAnimCtrl;
@@ -162,6 +232,31 @@ class _ChessGameScreenState extends State<ChessGameScreen>
   void initState() {
     super.initState();
     _initBoard();
+    _loadRating();
+  }
+
+  Future<void> _loadRating() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() => _playerRating = prefs.getInt('chess_player_rating') ?? 400);
+  }
+
+  Future<void> _saveRating() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('chess_player_rating', _playerRating);
+  }
+
+  /// Apply ELO update based on game outcome. Only called once per game
+  /// and only in 1-player vs AI mode.
+  /// [score] — 1.0 win, 0.5 draw, 0.0 loss (from player's perspective).
+  void _applyRatingResult(double score) {
+    if (_playerMode != PlayerMode.onePlayer) return;
+    if (_ratingAppliedThisGame) return;
+    final delta = _eloChange(_playerRating, _currentAiRating, score);
+    _playerRating = (_playerRating + delta).clamp(100, 3000);
+    _lastRatingDelta = delta;
+    _ratingAppliedThisGame = true;
+    _saveRating();
   }
 
   @override
@@ -207,6 +302,10 @@ class _ChessGameScreenState extends State<ChessGameScreen>
     _playerMode = mode;
     _humanColor = humanColor;
     _mode = GameMode.playing;
+    _ratingAppliedThisGame = false;
+    _lastRatingDelta = 0;
+    _hintFrom = null;
+    _hintTo = null;
     setState(() {});
 
     // If AI plays white, make AI move first
@@ -225,6 +324,7 @@ class _ChessGameScreenState extends State<ChessGameScreen>
     // In WiFi mode, only allow moves on local player's turn
     if (_isWifiGame && _turn != _humanColor) return;
 
+    _clearHint();
     final piece = _board[r][c];
 
     if (_selected != null) {
@@ -322,10 +422,17 @@ class _ChessGameScreenState extends State<ChessGameScreen>
       if (!hasLegal) {
         _gameOver = true;
         if (inCheck) {
-          _status = '${_turn == PieceColor.white ? "Black" : "White"} wins by checkmate!';
+          final winner = _turn == PieceColor.white ? PieceColor.black : PieceColor.white;
+          _status = '${winner == PieceColor.white ? "White" : "Black"} wins by checkmate!';
+          _applyRatingResult(winner == _humanColor ? 1.0 : 0.0);
           _triggerCheckmateOverlay();
         } else {
           _status = 'Stalemate — Draw!';
+          _applyRatingResult(0.5);
+        }
+        if (_ratingAppliedThisGame && _lastRatingDelta != 0) {
+          final sign = _lastRatingDelta > 0 ? '+' : '';
+          _status += '  ($sign$_lastRatingDelta rating → $_playerRating)';
         }
       } else if (inCheck) {
         _status = '$name is in check!';
@@ -606,6 +713,41 @@ class _ChessGameScreenState extends State<ChessGameScreen>
     }
   }
 
+  /// Suggest a good move for the human player (used by Easy-mode hint).
+  /// Uses single-ply scoring — fast, adequate for Easy mode guidance.
+  void _showHint() {
+    if (_gameOver || _aiThinking) return;
+    if (_playerMode != PlayerMode.onePlayer) return;
+    if (_aiDifficulty != 0) return;
+    if (_turn != _humanColor) return;
+
+    final moves = _getAllMoves(_humanColor);
+    if (moves.isEmpty) return;
+
+    int bestScore = -999999;
+    (int, int, int, int)? best;
+    for (final (fr, fc, tr, tc) in moves) {
+      final score = _scoreMoveSinglePly(fr, fc, tr, tc, _humanColor);
+      if (score > bestScore) {
+        bestScore = score;
+        best = (fr, fc, tr, tc);
+      }
+    }
+
+    if (best == null) return;
+    HapticFeedback.lightImpact();
+    setState(() {
+      _hintFrom = (best!.$1, best.$2);
+      _hintTo = (best.$3, best.$4);
+    });
+  }
+
+  void _clearHint() {
+    if (_hintFrom == null && _hintTo == null) return;
+    _hintFrom = null;
+    _hintTo = null;
+  }
+
   (int, int, int, int)? _findBestMove() {
     final aiColor = _humanColor == PieceColor.white ? PieceColor.black : PieceColor.white;
     final moves = _getAllMoves(aiColor);
@@ -618,18 +760,18 @@ class _ChessGameScreenState extends State<ChessGameScreen>
     int bestScore = -999999;
     (int, int, int, int)? bestMove;
 
-    if (_aiDifficulty == 0) {
-      // Easy: single-ply scoring with random noise
+    final depth = _depthForRating(_currentAiRating);
+    if (depth <= 1) {
+      // Low rating: single-ply scoring + random noise proportional to weakness.
+      final noise = (500 - _currentAiRating).clamp(0, 400) ~/ 8;
       for (final (fr, fc, tr, tc) in moves) {
-        final score = _scoreMoveSinglePly(fr, fc, tr, tc, aiColor) + rng.nextInt(51);
+        final score = _scoreMoveSinglePly(fr, fc, tr, tc, aiColor) + rng.nextInt(noise + 1);
         if (score > bestScore) {
           bestScore = score;
           bestMove = (fr, fc, tr, tc);
         }
       }
     } else {
-      // Medium: depth 2, Hard: depth 4
-      final depth = _aiDifficulty == 1 ? 2 : 4;
       for (final (fr, fc, tr, tc) in moves) {
         final undo = _doMove(fr, fc, tr, tc);
         final score = _minimax(depth - 1, -999999, 999999, false, aiColor);
@@ -1062,15 +1204,18 @@ class _ChessGameScreenState extends State<ChessGameScreen>
                   style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600,
                       color: GameTheme.textSecondary, letterSpacing: 1)),
               const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _pieceStyleChip(0, '\u265A', 'Classic'),
-                  const SizedBox(width: 10),
-                  _pieceStyleChip(1, '\u2654', 'Outlined'),
-                  const SizedBox(width: 10),
-                  _pieceStyleChip(2, 'K', 'Minimal'),
-                ],
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    for (int i = 0; i < _pieceStyleConfigs.length; i++) ...[
+                      if (i > 0) const SizedBox(width: 10),
+                      _pieceStyleChip(i,
+                        _pieceStyleConfigs[i].displaySymbol,
+                        _pieceStyleConfigs[i].name),
+                    ],
+                  ],
+                ),
               ),
 
               const SizedBox(height: 24),
@@ -1203,12 +1348,13 @@ class _ChessGameScreenState extends State<ChessGameScreen>
   void _showColorPicker(PlayerMode mode) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: GameTheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (_) => StatefulBuilder(
-        builder: (ctx, setSheetState) => Padding(
+        builder: (ctx, setSheetState) => SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(32, 24, 32, 40),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1224,6 +1370,25 @@ class _ChessGameScreenState extends State<ChessGameScreen>
 
               // Difficulty selector (1-player only)
               if (mode == PlayerMode.onePlayer) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: GameTheme.accent.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.military_tech_rounded,
+                          color: GameTheme.accent, size: 20),
+                      const SizedBox(width: 8),
+                      Text('Your Rating: $_playerRating',
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700,
+                              color: GameTheme.accent)),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
                 const Text('AI DIFFICULTY',
                     style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700,
                         color: GameTheme.textSecondary, letterSpacing: 1.5)),
@@ -1289,6 +1454,12 @@ class _ChessGameScreenState extends State<ChessGameScreen>
                   fontSize: 13, fontWeight: FontWeight.w700,
                   color: selected ? GameTheme.accent : GameTheme.textSecondary,
                 )),
+            const SizedBox(height: 2),
+            Text('${_aiRatings[level]} ELO',
+                style: TextStyle(
+                  fontSize: 10, fontWeight: FontWeight.w600,
+                  color: selected ? GameTheme.accent : GameTheme.textSecondary,
+                )),
           ],
         ),
       ),
@@ -1349,7 +1520,7 @@ class _ChessGameScreenState extends State<ChessGameScreen>
       appBar: AppBar(
         title: Text(_isWifiGame ? 'Chess — WiFi'
             : _playerMode == PlayerMode.onePlayer
-            ? 'Chess — vs AI (${['Easy', 'Medium', 'Hard'][_aiDifficulty]})'
+            ? 'You $_playerRating — AI $_currentAiRating'
             : 'Chess — 2 Players'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded, color: GameTheme.textPrimary),
@@ -1362,6 +1533,13 @@ class _ChessGameScreenState extends State<ChessGameScreen>
           },
         ),
         actions: [
+          // Hint button — Easy mode only
+          if (_playerMode == PlayerMode.onePlayer && _aiDifficulty == 0)
+            IconButton(
+              icon: const Icon(Icons.lightbulb_outline_rounded, color: Color(0xFFFFD54F)),
+              onPressed: _showHint,
+              tooltip: 'Show hint',
+            ),
           // Theme switcher
           IconButton(
             icon: const Icon(Icons.palette_outlined, color: GameTheme.textSecondary),
@@ -1375,6 +1553,8 @@ class _ChessGameScreenState extends State<ChessGameScreen>
             icon: const Icon(Icons.refresh_rounded, color: GameTheme.accent),
             onPressed: () {
               _initBoard();
+              _hintFrom = null;
+              _hintTo = null;
               setState(() {});
               if (_playerMode == PlayerMode.onePlayer && _humanColor == PieceColor.black) {
                 _scheduleAiMove();
@@ -1702,10 +1882,13 @@ class _ChessGameScreenState extends State<ChessGameScreen>
     final isValidMove = _validMoves.contains((r, c));
     final isLastMove = _lastMoveFrom == (r, c) || _lastMoveTo == (r, c);
     final isCapturing = _captureSquare == (r, c);
+    final isHint = _hintFrom == (r, c) || _hintTo == (r, c);
 
     Color bgColor;
     if (isSelected) {
       bgColor = const Color(0xFF66BB6A);
+    } else if (isHint) {
+      bgColor = isLight ? const Color(0xFF9FDFFF) : const Color(0xFF3FA9E0);
     } else if (isLastMove) {
       bgColor = isLight ? const Color(0xFFF7F78A) : const Color(0xFFDADA58);
     } else {
@@ -1767,98 +1950,99 @@ class _ChessGameScreenState extends State<ChessGameScreen>
 
   Widget _buildPiece(ChessPiece piece, double size) {
     final isWhite = piece.color == PieceColor.white;
-
-    // Gradient colors for premium look
+    final style = _pieceStyleConfigs[_pieceStyle];
+    final symbol = style.symbols[piece.type]!;
+    final contrastColor = isWhite ? _theme.blackPiece : _theme.whitePiece;
     final gradientColors = isWhite
         ? [_theme.whitePiece, Color.lerp(_theme.whitePiece, Colors.grey.shade300, 0.3)!]
         : [Color.lerp(_theme.blackPiece, Colors.grey.shade700, 0.2)!, _theme.blackPiece];
-    final fgColor = isWhite ? _theme.blackPiece : _theme.whitePiece;
-    final borderColor = isWhite
-        ? Colors.black.withValues(alpha: 0.25)
-        : Colors.white.withValues(alpha: 0.15);
-    final glowColor = isWhite
-        ? Colors.white.withValues(alpha: 0.4)
-        : Colors.black.withValues(alpha: 0.3);
-
-    // Piece style sets: Classic (filled), Outlined, Minimal (letters)
-    const _pieceStyleSets = [
-      // Classic (filled Unicode)
-      {
-        PieceType.king: '\u265A',
-        PieceType.queen: '\u265B',
-        PieceType.rook: '\u265C',
-        PieceType.bishop: '\u265D',
-        PieceType.knight: '\u265E',
-        PieceType.pawn: '\u265F',
-      },
-      // Outlined (white Unicode)
-      {
-        PieceType.king: '\u2654',
-        PieceType.queen: '\u2655',
-        PieceType.rook: '\u2656',
-        PieceType.bishop: '\u2657',
-        PieceType.knight: '\u2658',
-        PieceType.pawn: '\u2659',
-      },
-      // Minimal (letter-based)
-      {
-        PieceType.king: 'K',
-        PieceType.queen: 'Q',
-        PieceType.rook: 'R',
-        PieceType.bishop: 'B',
-        PieceType.knight: 'N',
-        PieceType.pawn: 'P',
-      },
-    ];
-    final pieceSymbols = _pieceStyleSets[_pieceStyle];
 
     return Container(
-      width: size * 0.82,
-      height: size * 0.82,
+      width: size * 0.82, height: size * 0.82,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: gradientColors,
-        ),
+          begin: Alignment.topLeft, end: Alignment.bottomRight,
+          colors: gradientColors),
         shape: BoxShape.circle,
-        border: Border.all(color: borderColor, width: 2),
+        border: Border.all(
+          color: isWhite ? Colors.black.withValues(alpha: 0.25)
+                         : Colors.white.withValues(alpha: 0.15),
+          width: 2),
         boxShadow: [
-          // Drop shadow
+          BoxShadow(color: Colors.black.withValues(alpha: 0.4),
+            blurRadius: 4, offset: const Offset(1, 2)),
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.4),
-            blurRadius: 4,
-            offset: const Offset(1, 2),
-          ),
-          // Inner glow effect
-          BoxShadow(
-            color: glowColor,
-            blurRadius: 2,
-            spreadRadius: -1,
-          ),
+            color: (isWhite ? Colors.white : Colors.black).withValues(alpha: 0.4),
+            blurRadius: 2, spreadRadius: -1),
         ],
       ),
-      child: Center(
-        child: Text(
-          pieceSymbols[piece.type]!,
-          style: TextStyle(
-            fontSize: size * 0.5,
-            fontWeight: FontWeight.w900,
-            color: fgColor,
-            height: 1.0,
-            shadows: [
-              Shadow(
-                color: fgColor.withValues(alpha: 0.3),
-                blurRadius: 1,
-                offset: const Offset(0, 1),
-              ),
-            ],
-          ),
-        ),
-      ),
+      child: Center(child: Text(symbol,
+        style: TextStyle(fontSize: size * 0.5, fontWeight: FontWeight.w900,
+          color: contrastColor, height: 1.0,
+          shadows: [
+            Shadow(color: contrastColor.withValues(alpha: 0.3),
+              blurRadius: 1, offset: const Offset(0, 1)),
+          ]))),
     );
   }
 }
+
+// Chess piece style configurations ──────────────────────────────────────────
+
+enum _PieceRenderStyle { circle }
+
+class _PieceStyleConfig {
+  final String name;
+  final String displaySymbol;
+  final Map<PieceType, String> symbols;
+  final _PieceRenderStyle render;
+
+  const _PieceStyleConfig({
+    required this.name,
+    required this.displaySymbol,
+    required this.symbols,
+    this.render = _PieceRenderStyle.circle,
+  });
+}
+
+const _pieceSymbolsFilled = <PieceType, String>{
+  PieceType.king: '\u265A', PieceType.queen: '\u265B',
+  PieceType.rook: '\u265C', PieceType.bishop: '\u265D',
+  PieceType.knight: '\u265E', PieceType.pawn: '\u265F',
+};
+
+const _pieceSymbolsOutlined = <PieceType, String>{
+  PieceType.king: '\u2654', PieceType.queen: '\u2655',
+  PieceType.rook: '\u2656', PieceType.bishop: '\u2657',
+  PieceType.knight: '\u2658', PieceType.pawn: '\u2659',
+};
+
+const _pieceSymbolsLetter = <PieceType, String>{
+  PieceType.king: 'K', PieceType.queen: 'Q',
+  PieceType.rook: 'R', PieceType.bishop: 'B',
+  PieceType.knight: 'N', PieceType.pawn: 'P',
+};
+
+const _pieceStyleConfigs = <_PieceStyleConfig>[
+  _PieceStyleConfig(
+    name: 'Classic',
+    displaySymbol: '\u265A',
+    symbols: _pieceSymbolsFilled,
+    render: _PieceRenderStyle.circle,
+  ),
+  _PieceStyleConfig(
+    name: 'Outlined',
+    displaySymbol: '\u2654',
+    symbols: _pieceSymbolsOutlined,
+    render: _PieceRenderStyle.circle,
+  ),
+  _PieceStyleConfig(
+    name: 'Minimal',
+    displaySymbol: 'K',
+    symbols: _pieceSymbolsLetter,
+    render: _PieceRenderStyle.circle,
+  ),
+];
 
 /// Undo info for simulating moves in minimax.
 class _UndoInfo {

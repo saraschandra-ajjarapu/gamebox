@@ -758,7 +758,7 @@ class _LudoGameScreenState extends State<LudoGameScreen>
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final boardSize = min(constraints.maxWidth - 24, constraints.maxHeight - 200);
+            final boardSize = min(min(constraints.maxWidth - 24, constraints.maxHeight - 200), 700.0);
 
             return Column(
               children: [
@@ -774,10 +774,10 @@ class _LudoGameScreenState extends State<LudoGameScreen>
 
                 // Player indicators
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: _players.map((p) => _playerChip(p)).toList(),
+                    children: _players.map((p) => Flexible(child: _playerChip(p))).toList(),
                   ),
                 ),
 

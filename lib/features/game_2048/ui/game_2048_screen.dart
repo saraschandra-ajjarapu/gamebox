@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/game_theme.dart';
+import '../../../core/widgets/high_score_dialog.dart';
 import '../../../core/utils/game_help.dart';
 
 // ── Seasonal themes ───────────────────────────────────────────────────────
@@ -268,6 +269,11 @@ class _Game2048ScreenState extends State<Game2048Screen>
       }
     }
     _gameOver = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      HighScoreDialog.submitIfQualifies(
+        context: context, gameId: '2048', gameName: '2048', score: _score);
+    });
   }
 
   Offset? _dragStart;
@@ -306,7 +312,7 @@ class _Game2048ScreenState extends State<Game2048Screen>
   @override
   Widget build(BuildContext context) {
     final screenW = MediaQuery.of(context).size.width;
-    final gridW = screenW - 40;
+    final gridW = min(screenW - 40, 480.0);
     final tileSize = (gridW - 5 * 8) / 4;
 
     return Scaffold(
@@ -334,7 +340,7 @@ class _Game2048ScreenState extends State<Game2048Screen>
           ),
         ],
       ),
-      body: Column(
+      body: SafeArea(child: Column(
         children: [
           const SizedBox(height: 10),
 
@@ -459,7 +465,7 @@ class _Game2048ScreenState extends State<Game2048Screen>
               ),
             ),
         ],
-      ),
+      )),
     );
   }
 

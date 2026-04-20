@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/theme/game_theme.dart';
 import '../../../core/utils/game_help.dart';
+import '../../../core/widgets/high_score_dialog.dart';
 
 enum MemoryMode { menu, playing }
 enum Difficulty { easy, medium, hard }
@@ -167,6 +168,13 @@ class _MemoryGameScreenState extends State<MemoryGameScreen>
         if (_bestMoves == 0 || _moves < _bestMoves) {
           _bestMoves = _moves;
         }
+        final finalMoves = _moves;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          HighScoreDialog.submitIfQualifies(
+            context: context, gameId: 'memory', gameName: 'Memory',
+            score: finalMoves, scoreLabel: 'Moves');
+        });
       }
       setState(() {});
     } else {

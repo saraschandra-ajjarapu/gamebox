@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/game_theme.dart';
 import '../../../core/utils/game_help.dart';
+import '../../../core/widgets/high_score_dialog.dart';
 import '../data/word_list.dart';
 
 enum TileState { empty, filled, correct, present, absent }
@@ -147,6 +148,13 @@ class _WordleScreenState extends State<WordleScreen> with TickerProviderStateMix
       HapticFeedback.heavyImpact();
       _bounceCtrl?.forward(from: 0);
       _saveStats();
+      final streakNow = _streak;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        HighScoreDialog.submitIfQualifies(
+          context: context, gameId: 'wordle', gameName: 'Wordle',
+          score: streakNow, scoreLabel: 'Streak');
+      });
     } else if (_guesses.length >= _maxGuesses) {
       _gameOver = true;
       _won = false;
@@ -306,9 +314,9 @@ class _WordleScreenState extends State<WordleScreen> with TickerProviderStateMix
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       final maxTileSize = min(
-                        (constraints.maxWidth - 20) / _wordLength,
-                        (constraints.maxHeight - 20) / _maxGuesses,
-                      ).clamp(0.0, 64.0);
+                        (constraints.maxWidth - _wordLength * 6 - 4) / _wordLength,
+                        (constraints.maxHeight - _maxGuesses * 6 - 4) / _maxGuesses,
+                      ).clamp(0.0, 96.0);
 
                       return Column(
                         mainAxisSize: MainAxisSize.min,
