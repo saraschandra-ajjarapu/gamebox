@@ -185,6 +185,25 @@ Tips:
 - A PERFECT drop (aligned within a hair) keeps the full width and builds a streak
 - Speed rises steadily — stay relaxed''',
 
+    'Headsup!': '''
+Pass-and-play party game — also known as Dumb Charades.
+
+Setup:
+- Enter team names and pick a color for each (2–4 teams)
+- Choose category: English Words, Telugu Movies, Hindi Movies, or All Mix
+- Pick points to win (10/15/20/25) and time per round (30s–3 min)
+
+How to play:
+- One player from the active team holds the phone to their forehead
+- Their teammates see the word and act it out or describe it (no saying the word)
+- Tap CORRECT (or swipe right/down) when they guess — SKIP (or swipe left/up) to pass
+- When the timer runs out, the team's score goes up by correct answers
+
+Winning:
+- First team to reach the target points wins!
+
+Screen works in portrait or landscape — whichever feels natural on the forehead.''',
+
     'Pac-Man': '''
 Eat every dot in the maze while avoiding ghosts.
 

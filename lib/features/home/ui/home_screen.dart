@@ -17,6 +17,7 @@ import '../../wordle/ui/wordle_screen.dart';
 import '../../tetris/ui/tetris_screen.dart';
 import '../../pacman/ui/pacman_screen.dart';
 import '../../stack/ui/stack_screen.dart';
+import '../../heads_up/ui/heads_up_screen.dart';
 import '../../leaderboard/ui/leaderboard_screen.dart';
 import '../../about/ui/about_screen.dart';
 
@@ -163,6 +164,11 @@ class HomeScreen extends StatelessWidget {
                     gradient: const [Color(0xFF7AA5E0), Color(0xFFBA9BD6)],
                     players: '1 Player',
                     onTap: () => _push(context, const StackGameScreen())),
+                  _GameCard(title: 'Headsup!', subtitle: 'Dumb Charades',
+                    icon: Icons.psychology_alt_rounded, helpName: 'Headsup!',
+                    gradient: const [Color(0xFFE040FB), Color(0xFF7B1FA2)],
+                    players: '2+ Teams',
+                    onTap: () => _push(context, const HeadsUpScreen())),
                 ]),
               ),
             ),
