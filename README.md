@@ -1,4 +1,4 @@
-# GameBox - Fun Games
+# Quirkade
 
 A collection of 13 classic games built with Flutter. Available on iOS and Android.
 
@@ -19,16 +19,20 @@ A collection of 13 classic games built with Flutter. Available on iOS and Androi
 | Ludo | 2-4 | Color picker, capture bonus turns, stacked piece indicators |
 | Tic Tac Toe | 1-2 | AI opponent, WiFi multiplayer |
 | Memory Match | 1 | Card flip animations |
-| Connect 4 | 1-2 | Smart AI (minimax depth 5), WiFi multiplayer |
+| Four in a Row | 1-2 | Smart AI (minimax depth 5), WiFi multiplayer |
 | Sudoku | 1 | Multiple difficulty levels |
-| Simon Says | 1 | Persistent best score |
+| Color Recall | 1 | Persistent best score |
 | Dots & Boxes | 1-2 | 7x7 grid, AI opponent, WiFi multiplayer |
 | Quiz | 1-4 | 9 categories, 400+ questions, pass-and-play multiplayer |
-| Wordle | 1 | 750+ words, stats tracking, win streaks |
+| Five Letters | 1 | 750+ words, stats tracking, win streaks |
+| Falling Blocks | 1 | Line-clearing block puzzle |
+| Maze Munch | 1 | Maze chase game |
+| Stack | 1 | Timing-based stacking game |
+| Guess It! | 2+ | Team clue-guessing game |
 
 ## WiFi Multiplayer
 
-Chess, Tic Tac Toe, Connect 4, and Dots & Boxes support WiFi multiplayer — play against friends on the same network with zero cloud cost. One player hosts, others join with a room code.
+Chess, Tic Tac Toe, Four in a Row, and Dots & Boxes support WiFi multiplayer — play against friends on the same network with zero cloud cost. One player hosts, others join with a room code.
 
 ## Tech Stack
 
@@ -62,16 +66,16 @@ lib/
 │   ├── ludo/ui/                       # Ludo with color picker
 │   ├── tictactoe/ui/                  # Tic Tac Toe
 │   ├── memory/ui/                     # Memory Match
-│   ├── connect4/ui/                   # Connect 4 with minimax AI
+│   ├── connect4/ui/                   # Four in a Row with minimax AI
 │   ├── sudoku/ui/                     # Sudoku
-│   ├── simon/ui/                      # Simon Says
+│   ├── simon/ui/                      # Color Recall
 │   ├── dots_boxes/ui/                 # Dots & Boxes
 │   ├── quiz/
 │   │   ├── data/quiz_questions.dart   # 400+ questions across 9 categories
 │   │   └── ui/quiz_screen.dart        # Quiz game UI
 │   └── wordle/
 │       ├── data/word_list.dart        # 750+ five-letter words
-│       └── ui/wordle_screen.dart      # Wordle game UI
+│       └── ui/wordle_screen.dart      # Five Letters game UI
 │
 assets/
 ├── app_icon.png                       # App icon source
@@ -109,10 +113,17 @@ flutter build appbundle --release
 
 ## Distribution
 
-- **iOS:** App Store — "GameBox - Fun Games" by SARASCHANDRA
-- **Android:** Google Play — in internal testing (production pending 14-day closed test)
-- **Bundle ID:** com.saraschandra.gamebox
+- **Display name:** Quirkade
+- **Publisher:** Buzzz Creations LLC
+- **Required individual contact:** Sowmyalakshmi Pavani
+- **Android:** Google Play — new LLC-owned listing
+- **iOS:** App Store — new LLC-owned listing
+- **Application / bundle ID:** com.buzzzcreations.quirkade
 
 ## Privacy Policy
 
-https://saraschandra-ajjarapu.github.io/gamebox/privacy-policy.html
+The policy in `privacy-policy.html` must be published at a stable public URL and updated with the selected advertising provider's actual data practices before ads are enabled.
+
+## Advertising
+
+Quirkade uses optional rewarded video only. No banner, interstitial, or app-open ads are implemented. Debug builds use Google's test IDs. Before release, replace both native test app IDs and provide the production rewarded unit IDs using `ADMOB_ANDROID_REWARDED_ID` and `ADMOB_IOS_REWARDED_ID` Dart defines.
