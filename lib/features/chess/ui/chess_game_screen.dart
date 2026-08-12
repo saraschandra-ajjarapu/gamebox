@@ -1625,104 +1625,106 @@ class _ChessGameScreenState extends State<ChessGameScreen>
           ),
         ],
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Column(
-            children: [
-              const Text('\u265A', style: TextStyle(fontSize: 72)),
-              const SizedBox(height: 8),
-              const Text(
-                'Chess',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w800,
-                  color: GameTheme.textPrimary,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Column(
+              children: [
+                const Text('\u265A', style: TextStyle(fontSize: 72)),
+                const SizedBox(height: 8),
+                const Text(
+                  'Chess',
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w800,
+                    color: GameTheme.textPrimary,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 40),
+                const SizedBox(height: 40),
 
-              // 1 Player
-              _menuButton(
-                icon: Icons.smart_toy_rounded,
-                label: '1 Player',
-                subtitle: 'Play against AI',
-                onTap: () => _showColorPicker(PlayerMode.onePlayer),
-              ),
-              const SizedBox(height: 16),
-
-              // 2 Player
-              _menuButton(
-                icon: Icons.people_rounded,
-                label: '2 Players',
-                subtitle: 'Local multiplayer',
-                onTap: () => _showColorPicker(PlayerMode.twoPlayer),
-              ),
-              const SizedBox(height: 16),
-
-              // WiFi Multiplayer
-              _menuButton(
-                icon: Icons.wifi_rounded,
-                label: 'WiFi Multiplayer',
-                subtitle: 'Play over WiFi',
-                onTap: () => setState(() => _showWifiLobby = true),
-              ),
-
-              const SizedBox(height: 40),
-
-              // Board theme selector
-              const Text(
-                'Board Theme',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: GameTheme.textSecondary,
-                  letterSpacing: 1,
+                // 1 Player
+                _menuButton(
+                  icon: Icons.smart_toy_rounded,
+                  label: '1 Player',
+                  subtitle: 'Play against AI',
+                  onTap: () => _showColorPicker(PlayerMode.onePlayer),
                 ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 60,
-                child: ListView.separated(
+                const SizedBox(height: 16),
+
+                // 2 Player
+                _menuButton(
+                  icon: Icons.people_rounded,
+                  label: '2 Players',
+                  subtitle: 'Local multiplayer',
+                  onTap: () => _showColorPicker(PlayerMode.twoPlayer),
+                ),
+                const SizedBox(height: 16),
+
+                // WiFi Multiplayer
+                _menuButton(
+                  icon: Icons.wifi_rounded,
+                  label: 'WiFi Multiplayer',
+                  subtitle: 'Play over WiFi',
+                  onTap: () => setState(() => _showWifiLobby = true),
+                ),
+
+                const SizedBox(height: 40),
+
+                // Board theme selector
+                const Text(
+                  'Board Theme',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: GameTheme.textSecondary,
+                    letterSpacing: 1,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 60,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    shrinkWrap: true,
+                    itemCount: _boardThemes.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 10),
+                    itemBuilder: (_, i) => _themeChip(i),
+                  ),
+                ),
+
+                const SizedBox(height: 28),
+
+                // Piece style selector
+                const Text(
+                  'Piece Style',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: GameTheme.textSecondary,
+                    letterSpacing: 1,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
-                  shrinkWrap: true,
-                  itemCount: _boardThemes.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 10),
-                  itemBuilder: (_, i) => _themeChip(i),
-                ),
-              ),
-
-              const SizedBox(height: 28),
-
-              // Piece style selector
-              const Text(
-                'Piece Style',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: GameTheme.textSecondary,
-                  letterSpacing: 1,
-                ),
-              ),
-              const SizedBox(height: 12),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    for (int i = 0; i < _pieceStyleConfigs.length; i++) ...[
-                      if (i > 0) const SizedBox(width: 10),
-                      _pieceStyleChip(
-                        i,
-                        _pieceStyleConfigs[i].displaySymbol,
-                        _pieceStyleConfigs[i].name,
-                      ),
+                  child: Row(
+                    children: [
+                      for (int i = 0; i < _pieceStyleConfigs.length; i++) ...[
+                        if (i > 0) const SizedBox(width: 10),
+                        _pieceStyleChip(
+                          i,
+                          _pieceStyleConfigs[i].displaySymbol,
+                          _pieceStyleConfigs[i].name,
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
 
-              const SizedBox(height: 24),
-            ],
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
         ),
       ),
@@ -2159,174 +2161,177 @@ class _ChessGameScreenState extends State<ChessGameScreen>
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          Column(
-            children: [
-              // Status
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (_aiThinking) ...[
-                      const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: GameTheme.accent,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                    ],
-                    Text(
-                      _aiThinking ? 'AI is thinking...' : _status,
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                        color: _status.contains('check')
-                            ? GameTheme.accentAlt
-                            : GameTheme.accent,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Turn indicator
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _turnIndicator(PieceColor.white),
-                  const SizedBox(width: 20),
-                  _turnIndicator(PieceColor.black),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-
-              // Board theme name
-              Text(
-                _theme.name,
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: GameTheme.textSecondary,
-                  letterSpacing: 1,
-                ),
-              ),
-              const SizedBox(height: 6),
-
-              // Board
-              Container(
-                width: boardSize,
-                height: boardSize,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(6),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.5),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: Stack(
-                    children: [
-                      for (int r = 0; r < 8; r++)
-                        for (int c = 0; c < 8; c++)
-                          Positioned(
-                            left: c * cellSize,
-                            top: r * cellSize,
-                            child: GestureDetector(
-                              onTap: () => _onSquareTap(r, c),
-                              child: _buildSquare(r, c, cellSize),
-                            ),
-                          ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const Spacer(),
-
-              if (_gameOver)
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Column(
+              children: [
+                // Status
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      ElevatedButton(
-                        onPressed: () {
-                          _initBoard();
-                          setState(() {});
-                          if (_playerMode == PlayerMode.onePlayer &&
-                              _humanColor == PieceColor.black) {
-                            _scheduleAiMove();
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: GameTheme.accent,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text(
-                          'Rematch',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      OutlinedButton(
-                        onPressed: () => setState(() => _mode = GameMode.menu),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: GameTheme.accent),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text(
-                          'Menu',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
+                      if (_aiThinking) ...[
+                        const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
                             color: GameTheme.accent,
                           ),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      Text(
+                        _aiThinking ? 'AI is thinking...' : _status,
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          color: _status.contains('check')
+                              ? GameTheme.accentAlt
+                              : GameTheme.accent,
                         ),
                       ),
                     ],
                   ),
                 ),
 
-              Padding(
-                padding: const EdgeInsets.only(bottom: 24),
-                child: Text(
-                  'Tap a piece to select, then tap where to move',
-                  style: TextStyle(
-                    color: GameTheme.textSecondary.withValues(alpha: 0.5),
-                    fontSize: 12,
+                // Turn indicator
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _turnIndicator(PieceColor.white),
+                    const SizedBox(width: 20),
+                    _turnIndicator(PieceColor.black),
+                  ],
+                ),
+
+                const SizedBox(height: 12),
+
+                // Board theme name
+                Text(
+                  _theme.name,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: GameTheme.textSecondary,
+                    letterSpacing: 1,
                   ),
                 ),
-              ),
-            ],
-          ),
+                const SizedBox(height: 6),
 
-          // Checkmate celebration overlay
-          if (_showCheckmateOverlay && _checkmateAnimCtrl != null)
-            _buildCheckmateOverlay(),
-        ],
+                // Board
+                Container(
+                  width: boardSize,
+                  height: boardSize,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(6),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: Stack(
+                      children: [
+                        for (int r = 0; r < 8; r++)
+                          for (int c = 0; c < 8; c++)
+                            Positioned(
+                              left: c * cellSize,
+                              top: r * cellSize,
+                              child: GestureDetector(
+                                onTap: () => _onSquareTap(r, c),
+                                child: _buildSquare(r, c, cellSize),
+                              ),
+                            ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const Spacer(),
+
+                if (_gameOver)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () {
+                            _initBoard();
+                            setState(() {});
+                            if (_playerMode == PlayerMode.onePlayer &&
+                                _humanColor == PieceColor.black) {
+                              _scheduleAiMove();
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: GameTheme.accent,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            'Rematch',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        OutlinedButton(
+                          onPressed: () =>
+                              setState(() => _mode = GameMode.menu),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: GameTheme.accent),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            'Menu',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: GameTheme.accent,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 24),
+                  child: Text(
+                    'Tap a piece to select, then tap where to move',
+                    style: TextStyle(
+                      color: GameTheme.textSecondary.withValues(alpha: 0.5),
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            // Checkmate celebration overlay
+            if (_showCheckmateOverlay && _checkmateAnimCtrl != null)
+              _buildCheckmateOverlay(),
+          ],
+        ),
       ),
     );
   }

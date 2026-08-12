@@ -10,10 +10,18 @@ Future<void> main() async {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
+  // Draw behind the status and navigation bars on every Android version.
+  // Android 15+ enforces this anyway; opting in explicitly makes older
+  // versions match instead of letting the OS decide.
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  // Only icon brightness here — the bar *color* setters (statusBarColor,
+  // systemNavigationBarColor) are deprecated no-ops from API 35 and setting
+  // them trips Play Console's deprecated-edge-to-edge-API warning.
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light,
+      statusBarBrightness: Brightness.dark,
+      systemNavigationBarIconBrightness: Brightness.light,
     ),
   );
 
