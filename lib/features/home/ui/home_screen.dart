@@ -47,6 +47,11 @@ class HomeScreen extends StatelessWidget {
                             width: 48,
                             height: 48,
                             fit: BoxFit.cover,
+                            // Decode to the size actually drawn rather than the
+                            // asset's full 180x180. 48dp at 3x is 144px, so the
+                            // full decode wastes memory for no visible gain.
+                            cacheWidth: 144,
+                            cacheHeight: 144,
                           ),
                         ),
                         const SizedBox(width: 12),
