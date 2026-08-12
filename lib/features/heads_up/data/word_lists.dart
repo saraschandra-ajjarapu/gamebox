@@ -1,4 +1,4 @@
-// Headsup! / Dumb Charades word banks. Each list should have plenty of
+// Guessing-game word banks. Each list should have plenty of
 // actable/describable items so rounds stay fresh without repeating.
 
 const List<String> headsUpEnglish = [

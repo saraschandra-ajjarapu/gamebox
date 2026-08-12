@@ -15,7 +15,8 @@ class WordleScreen extends StatefulWidget {
   State<WordleScreen> createState() => _WordleScreenState();
 }
 
-class _WordleScreenState extends State<WordleScreen> with TickerProviderStateMixin {
+class _WordleScreenState extends State<WordleScreen>
+    with TickerProviderStateMixin {
   static const int _maxGuesses = 6;
   static const int _wordLength = 5;
 
@@ -44,8 +45,14 @@ class _WordleScreenState extends State<WordleScreen> with TickerProviderStateMix
   @override
   void initState() {
     super.initState();
-    _shakeCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
-    _bounceCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 500));
+    _shakeCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _bounceCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
     _loadStats();
     _newGame();
   }
@@ -54,12 +61,15 @@ class _WordleScreenState extends State<WordleScreen> with TickerProviderStateMix
   void dispose() {
     _shakeCtrl?.dispose();
     _bounceCtrl?.dispose();
-    for (final c in _flipControllers) { c.dispose(); }
+    for (final c in _flipControllers) {
+      c.dispose();
+    }
     super.dispose();
   }
 
   Future<void> _loadStats() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() {
       _streak = prefs.getInt('wordle_streak') ?? 0;
       _bestStreak = prefs.getInt('wordle_best_streak') ?? 0;
@@ -87,7 +97,9 @@ class _WordleScreenState extends State<WordleScreen> with TickerProviderStateMix
     _won = false;
     _message = '';
     _keyStates.clear();
-    for (final c in _flipControllers) { c.dispose(); }
+    for (final c in _flipControllers) {
+      c.dispose();
+    }
     _flipControllers.clear();
     setState(() {});
   }
@@ -99,7 +111,12 @@ class _WordleScreenState extends State<WordleScreen> with TickerProviderStateMix
       _submitGuess();
     } else if (key == '⌫') {
       if (_currentGuess.isNotEmpty) {
-        setState(() => _currentGuess = _currentGuess.substring(0, _currentGuess.length - 1));
+        setState(
+          () => _currentGuess = _currentGuess.substring(
+            0,
+            _currentGuess.length - 1,
+          ),
+        );
       }
     } else if (_currentGuess.length < _wordLength) {
       setState(() => _currentGuess += key);
@@ -130,7 +147,8 @@ class _WordleScreenState extends State<WordleScreen> with TickerProviderStateMix
       final state = states[i];
       // Only upgrade keyboard state (correct > present > absent)
       final current = _keyStates[letter];
-      if (current == null || current == TileState.absent ||
+      if (current == null ||
+          current == TileState.absent ||
           (current == TileState.present && state == TileState.correct)) {
         _keyStates[letter] = state;
       }
@@ -144,7 +162,14 @@ class _WordleScreenState extends State<WordleScreen> with TickerProviderStateMix
       _gamesWon++;
       _gamesPlayed++;
       if (_streak > _bestStreak) _bestStreak = _streak;
-      _message = ['Genius!', 'Magnificent!', 'Impressive!', 'Splendid!', 'Great!', 'Phew!'][_guesses.length - 1];
+      _message = [
+        'Genius!',
+        'Magnificent!',
+        'Impressive!',
+        'Splendid!',
+        'Great!',
+        'Phew!',
+      ][_guesses.length - 1];
       HapticFeedback.heavyImpact();
       _bounceCtrl?.forward(from: 0);
       _saveStats();
@@ -152,8 +177,12 @@ class _WordleScreenState extends State<WordleScreen> with TickerProviderStateMix
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         HighScoreDialog.submitIfQualifies(
-          context: context, gameId: 'wordle', gameName: 'Wordle',
-          score: streakNow, scoreLabel: 'Streak');
+          context: context,
+          gameId: 'wordle',
+          gameName: 'Five Letters',
+          score: streakNow,
+          scoreLabel: 'Streak',
+        );
       });
     } else if (_guesses.length >= _maxGuesses) {
       _gameOver = true;
@@ -210,75 +239,102 @@ class _WordleScreenState extends State<WordleScreen> with TickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
-  void _useHint() {
-    if (_hintsUsed >= _maxHints || _gameOver) return;
+    void useHint() {
+      if (_hintsUsed >= _maxHints || _gameOver) return;
 
-    // Find positions that haven't been revealed yet and aren't already correctly guessed
-    final unrevealed = <int>[];
-    for (int i = 0; i < _wordLength; i++) {
-      if (_revealedPositions.contains(i)) continue;
-      // Check if this position was already correctly guessed
-      bool alreadyCorrect = false;
-      for (final guess in _guesses) {
-        if (guess[i] == _answer[i]) {
-          alreadyCorrect = true;
-          break;
+      // Find positions that haven't been revealed yet and aren't already correctly guessed
+      final unrevealed = <int>[];
+      for (int i = 0; i < _wordLength; i++) {
+        if (_revealedPositions.contains(i)) continue;
+        // Check if this position was already correctly guessed
+        bool alreadyCorrect = false;
+        for (final guess in _guesses) {
+          if (guess[i] == _answer[i]) {
+            alreadyCorrect = true;
+            break;
+          }
         }
+        if (!alreadyCorrect) unrevealed.add(i);
       }
-      if (!alreadyCorrect) unrevealed.add(i);
-    }
 
-    if (unrevealed.isEmpty) {
-      setState(() => _message = 'No more letters to reveal!');
-      return;
-    }
+      if (unrevealed.isEmpty) {
+        setState(() => _message = 'No more letters to reveal!');
+        return;
+      }
 
-    // Reveal a random unrevealed position
-    final pos = unrevealed[Random().nextInt(unrevealed.length)];
-    setState(() {
-      _hintsUsed++;
-      _revealedPositions.add(pos);
-      _message = 'Hint: Position ${pos + 1} is "${_answer[pos]}" ($_hintsUsed/$_maxHints used)';
-      // Also mark the key as present on keyboard
-      _keyStates[_answer[pos]] = TileState.present;
-    });
-    HapticFeedback.mediumImpact();
-  }
+      // Reveal a random unrevealed position
+      final pos = unrevealed[Random().nextInt(unrevealed.length)];
+      setState(() {
+        _hintsUsed++;
+        _revealedPositions.add(pos);
+        _message =
+            'Hint: Position ${pos + 1} is "${_answer[pos]}" ($_hintsUsed/$_maxHints used)';
+        // Also mark the key as present on keyboard
+        _keyStates[_answer[pos]] = TileState.present;
+      });
+      HapticFeedback.mediumImpact();
+    }
 
     return Scaffold(
       backgroundColor: GameTheme.background,
       appBar: AppBar(
-        title: const Text('Wordle'),
+        title: const Text('Five Letters'),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded, color: GameTheme.textPrimary),
-          onPressed: () => Navigator.pop(context)),
+          icon: const Icon(
+            Icons.arrow_back_ios_rounded,
+            color: GameTheme.textPrimary,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
         actions: [
           // Hint button
           if (!_gameOver)
             Stack(
               children: [
                 IconButton(
-                  icon: Icon(Icons.lightbulb_rounded,
-                    color: _hintsUsed < _maxHints ? GameTheme.accent : GameTheme.textSecondary),
-                  onPressed: _hintsUsed < _maxHints ? _useHint : null),
-                Positioned(right: 6, top: 6,
+                  icon: Icon(
+                    Icons.lightbulb_rounded,
+                    color: _hintsUsed < _maxHints
+                        ? GameTheme.accent
+                        : GameTheme.textSecondary,
+                  ),
+                  onPressed: _hintsUsed < _maxHints ? useHint : null,
+                ),
+                Positioned(
+                  right: 6,
+                  top: 6,
                   child: Container(
                     padding: const EdgeInsets.all(3),
                     decoration: BoxDecoration(
                       color: GameTheme.accent,
-                      shape: BoxShape.circle),
-                    child: Text('${_maxHints - _hintsUsed}',
-                      style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.black)),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      '${_maxHints - _hintsUsed}',
+                      style: const TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black,
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
           IconButton(
-            icon: const Icon(Icons.bar_chart_rounded, color: GameTheme.textSecondary),
-            onPressed: _showStats),
+            icon: const Icon(
+              Icons.bar_chart_rounded,
+              color: GameTheme.textSecondary,
+            ),
+            onPressed: _showStats,
+          ),
           IconButton(
-            icon: const Icon(Icons.help_outline_rounded, color: GameTheme.accent),
-            onPressed: () => GameHelp.show(context, 'Wordle')),
+            icon: const Icon(
+              Icons.help_outline_rounded,
+              color: GameTheme.accent,
+            ),
+            onPressed: () => GameHelp.show(context, 'Five Letters'),
+          ),
         ],
       ),
       body: SafeArea(
@@ -289,20 +345,59 @@ class _WordleScreenState extends State<WordleScreen> with TickerProviderStateMix
               height: 36,
               child: Center(
                 child: _message.isNotEmpty
-                  ? Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: _gameOver && !_won ? GameTheme.accentAlt.withValues(alpha: 0.2) : GameTheme.surface,
-                        borderRadius: BorderRadius.circular(8)),
-                      child: Text(_message,
-                        style: TextStyle(
-                          fontSize: _gameOver && !_won ? 18 : 14,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: _gameOver && !_won ? 2 : 0,
-                          color: _gameOver && _won ? GameTheme.accent
-                            : _gameOver ? GameTheme.accentAlt : GameTheme.textPrimary)),
-                    )
-                  : null,
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _gameOver && !_won
+                              ? GameTheme.accentAlt.withValues(alpha: 0.2)
+                              : GameTheme.surface,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          _message,
+                          style: TextStyle(
+                            fontSize: _gameOver && !_won ? 18 : 14,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: _gameOver && !_won ? 2 : 0,
+                            color: _gameOver && _won
+                                ? GameTheme.accent
+                                : _gameOver
+                                ? GameTheme.accentAlt
+                                : GameTheme.textPrimary,
+                          ),
+                        ),
+                      )
+                    : null,
+              ),
+            ),
+
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 2, 16, 4),
+              child: Column(
+                children: [
+                  Text(
+                    'Guess the hidden 5-letter word in 6 tries',
+                    style: TextStyle(
+                      color: GameTheme.textSecondary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(height: 6),
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 12,
+                    runSpacing: 4,
+                    children: [
+                      _ColorKey(color: Color(0xFF538D4E), label: 'Right spot'),
+                      _ColorKey(color: Color(0xFFB59F3B), label: 'Wrong spot'),
+                      _ColorKey(color: Color(0xFF3A3A3C), label: 'Not in word'),
+                    ],
+                  ),
+                ],
               ),
             ),
 
@@ -314,8 +409,10 @@ class _WordleScreenState extends State<WordleScreen> with TickerProviderStateMix
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       final maxTileSize = min(
-                        (constraints.maxWidth - _wordLength * 6 - 4) / _wordLength,
-                        (constraints.maxHeight - _maxGuesses * 6 - 4) / _maxGuesses,
+                        (constraints.maxWidth - _wordLength * 6 - 4) /
+                            _wordLength,
+                        (constraints.maxHeight - _maxGuesses * 6 - 4) /
+                            _maxGuesses,
                       ).clamp(0.0, 96.0);
 
                       return Column(
@@ -327,7 +424,9 @@ class _WordleScreenState extends State<WordleScreen> with TickerProviderStateMix
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: List.generate(_wordLength, (col) {
                                 return Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 3),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 3,
+                                  ),
                                   child: _buildTile(row, col, maxTileSize),
                                 );
                               }),
@@ -348,11 +447,23 @@ class _WordleScreenState extends State<WordleScreen> with TickerProviderStateMix
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: GameTheme.accent,
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                   onPressed: _newGame,
-                  child: const Text('New Game',
-                    style: TextStyle(fontWeight: FontWeight.w700, color: Colors.white))),
+                  child: const Text(
+                    'New Game',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
               ),
 
             // Keyboard
@@ -409,13 +520,16 @@ class _WordleScreenState extends State<WordleScreen> with TickerProviderStateMix
         borderRadius: BorderRadius.circular(4),
       ),
       child: Center(
-        child: Text(letter,
+        child: Text(
+          letter,
           style: TextStyle(
             fontSize: size * 0.5,
             fontWeight: FontWeight.w800,
             color: state == TileState.filled || state == TileState.empty
-              ? GameTheme.textPrimary : Colors.white,
-          )),
+                ? GameTheme.textPrimary
+                : Colors.white,
+          ),
+        ),
       ),
     );
   }
@@ -462,14 +576,16 @@ class _WordleScreenState extends State<WordleScreen> with TickerProviderStateMix
                       height: 48,
                       decoration: BoxDecoration(
                         color: bgColor,
-                        borderRadius: BorderRadius.circular(6)),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
                       child: Center(
                         child: Text(
                           key == '⌫' ? '⌫' : key,
                           style: TextStyle(
                             fontSize: isWide ? 11 : 15,
                             fontWeight: FontWeight.w700,
-                            color: textColor),
+                            color: textColor,
+                          ),
                         ),
                       ),
                     ),
@@ -484,33 +600,90 @@ class _WordleScreenState extends State<WordleScreen> with TickerProviderStateMix
   }
 
   void _showStats() {
-    final winRate = _gamesPlayed > 0 ? (_gamesWon * 100 / _gamesPlayed).round() : 0;
+    final winRate = _gamesPlayed > 0
+        ? (_gamesWon * 100 / _gamesPlayed).round()
+        : 0;
     showModalBottomSheet(
       context: context,
       backgroundColor: GameTheme.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(24),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Text('Statistics', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: GameTheme.textPrimary)),
-          const SizedBox(height: 20),
-          Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-            _statBox('$_gamesPlayed', 'Played'),
-            _statBox('$winRate%', 'Win Rate'),
-            _statBox('$_streak', 'Streak'),
-            _statBox('$_bestStreak', 'Best'),
-          ]),
-          const SizedBox(height: 20),
-        ]),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Statistics',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: GameTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _statBox('$_gamesPlayed', 'Played'),
+                _statBox('$winRate%', 'Win Rate'),
+                _statBox('$_streak', 'Streak'),
+                _statBox('$_bestStreak', 'Best'),
+              ],
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
       ),
     );
   }
 
   Widget _statBox(String value, String label) {
-    return Column(children: [
-      Text(value, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: GameTheme.textPrimary)),
-      Text(label, style: const TextStyle(fontSize: 11, color: GameTheme.textSecondary)),
-    ]);
+    return Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.w800,
+            color: GameTheme.textPrimary,
+          ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 11, color: GameTheme.textSecondary),
+        ),
+      ],
+    );
+  }
+}
+
+class _ColorKey extends StatelessWidget {
+  const _ColorKey({required this.color, required this.label});
+
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(3),
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: const TextStyle(color: GameTheme.textSecondary, fontSize: 11),
+        ),
+      ],
+    );
   }
 }

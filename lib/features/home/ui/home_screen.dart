@@ -42,40 +42,67 @@ class HomeScreen extends StatelessWidget {
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(14),
-                          child: Image.asset('assets/app_icon.png',
-                            width: 48, height: 48, fit: BoxFit.cover),
+                          child: Image.asset(
+                            'assets/app_icon.png',
+                            width: 48,
+                            height: 48,
+                            fit: BoxFit.cover,
+                          ),
                         ),
                         const SizedBox(width: 12),
                         const Expanded(
-                          child: Text('GameBox',
-                            style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800,
-                              color: GameTheme.textPrimary, letterSpacing: -0.5)),
+                          child: Text(
+                            'Quirkade',
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w800,
+                              color: GameTheme.textPrimary,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.emoji_events_rounded,
-                            color: GameTheme.gold),
+                          icon: const Icon(
+                            Icons.emoji_events_rounded,
+                            color: GameTheme.gold,
+                          ),
                           tooltip: 'Leaderboard',
                           onPressed: () {
                             HapticFeedback.lightImpact();
-                            Navigator.push(context, MaterialPageRoute(
-                              builder: (_) => const LeaderboardScreen()));
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const LeaderboardScreen(),
+                              ),
+                            );
                           },
                         ),
                         IconButton(
-                          icon: const Icon(Icons.info_outline_rounded,
-                            color: GameTheme.accent),
+                          icon: const Icon(
+                            Icons.info_outline_rounded,
+                            color: GameTheme.accent,
+                          ),
                           tooltip: 'About',
                           onPressed: () {
                             HapticFeedback.lightImpact();
-                            Navigator.push(context, MaterialPageRoute(
-                              builder: (_) => const AboutScreen()));
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const AboutScreen(),
+                              ),
+                            );
                           },
                         ),
                       ],
                     ),
                     const SizedBox(height: 6),
-                    const Text('Fun Games',
-                      style: TextStyle(fontSize: 15, color: GameTheme.textSecondary)),
+                    const Text(
+                      'A curious collection of games',
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: GameTheme.textSecondary,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -86,89 +113,156 @@ class HomeScreen extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 10),
               sliver: SliverGrid(
                 gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: 280, childAspectRatio: 0.85,
-                  crossAxisSpacing: 14, mainAxisSpacing: 14),
+                  maxCrossAxisExtent: 280,
+                  childAspectRatio: 0.85,
+                  crossAxisSpacing: 14,
+                  mainAxisSpacing: 14,
+                ),
                 delegate: SliverChildListDelegate([
-                  _GameCard(title: '2048', subtitle: 'Slide & merge',
-                    icon: Icons.grid_4x4_rounded, helpName: '2048',
+                  _GameCard(
+                    title: '2048',
+                    subtitle: 'Slide & merge',
+                    icon: Icons.grid_4x4_rounded,
+                    helpName: '2048',
                     gradient: const [Color(0xFFEDC53F), Color(0xFFE8A520)],
                     players: '1 Player',
-                    onTap: () => _push(context, const Game2048Screen())),
-                  _GameCard(title: 'Snake', subtitle: 'Classic arcade',
-                    icon: Icons.timeline_rounded, helpName: 'Snake',
+                    onTap: () => _push(context, const Game2048Screen()),
+                  ),
+                  _GameCard(
+                    title: 'Snake',
+                    subtitle: 'Classic arcade',
+                    icon: Icons.timeline_rounded,
+                    helpName: 'Snake',
                     gradient: const [Color(0xFF4ECDC4), Color(0xFF2EAF9F)],
                     players: '1 Player',
-                    onTap: () => _push(context, const SnakeGameScreen())),
-                  _GameCard(title: 'Chess', subtitle: 'Battle of minds',
-                    icon: Icons.castle_rounded, helpName: 'Chess',
+                    onTap: () => _push(context, const SnakeGameScreen()),
+                  ),
+                  _GameCard(
+                    title: 'Chess',
+                    subtitle: 'Battle of minds',
+                    icon: Icons.castle_rounded,
+                    helpName: 'Chess',
                     gradient: const [Color(0xFF667EEA), Color(0xFF764BA2)],
                     players: '1-2 Players',
-                    onTap: () => _push(context, const ChessGameScreen())),
-                  _GameCard(title: 'Ludo', subtitle: 'Roll & race',
-                    icon: Icons.casino_rounded, helpName: 'Ludo',
+                    onTap: () => _push(context, const ChessGameScreen()),
+                  ),
+                  _GameCard(
+                    title: 'Ludo',
+                    subtitle: 'Roll & race',
+                    icon: Icons.casino_rounded,
+                    helpName: 'Ludo',
                     gradient: const [Color(0xFFFF6B6B), Color(0xFFEE5A24)],
                     players: '2-4 Players',
-                    onTap: () => _push(context, const LudoGameScreen())),
-                  _GameCard(title: 'Tic Tac Toe', subtitle: 'X vs O',
-                    icon: Icons.tag_rounded, helpName: 'Tic Tac Toe',
+                    onTap: () => _push(context, const LudoGameScreen()),
+                  ),
+                  _GameCard(
+                    title: 'Tic Tac Toe',
+                    subtitle: 'X vs O',
+                    icon: Icons.tag_rounded,
+                    helpName: 'Tic Tac Toe',
                     gradient: const [Color(0xFFA8E063), Color(0xFF56AB2F)],
                     players: '1-2 Players',
-                    onTap: () => _push(context, const TicTacToeScreen())),
-                  _GameCard(title: 'Memory', subtitle: 'Find pairs',
-                    icon: Icons.psychology_rounded, helpName: 'Memory',
+                    onTap: () => _push(context, const TicTacToeScreen()),
+                  ),
+                  _GameCard(
+                    title: 'Memory',
+                    subtitle: 'Find pairs',
+                    icon: Icons.psychology_rounded,
+                    helpName: 'Memory',
                     gradient: const [Color(0xFFFF9A9E), Color(0xFFFF6B8A)],
                     players: '1 Player',
-                    onTap: () => _push(context, const MemoryGameScreen())),
-                  _GameCard(title: 'Connect 4', subtitle: 'Drop & win',
-                    icon: Icons.circle_outlined, helpName: 'Connect 4',
+                    onTap: () => _push(context, const MemoryGameScreen()),
+                  ),
+                  _GameCard(
+                    title: 'Four in a Row',
+                    subtitle: 'Drop & win',
+                    icon: Icons.circle_outlined,
+                    helpName: 'Four in a Row',
                     gradient: const [Color(0xFF1565C0), Color(0xFF0D47A1)],
                     players: '1-2 Players',
-                    onTap: () => _push(context, const Connect4Screen())),
-                  _GameCard(title: 'Sudoku', subtitle: 'Number puzzle',
-                    icon: Icons.grid_on_rounded, helpName: 'Sudoku',
+                    onTap: () => _push(context, const Connect4Screen()),
+                  ),
+                  _GameCard(
+                    title: 'Sudoku',
+                    subtitle: 'Number puzzle',
+                    icon: Icons.grid_on_rounded,
+                    helpName: 'Sudoku',
                     gradient: const [Color(0xFF7B68EE), Color(0xFF5B4FCF)],
                     players: '1 Player',
-                    onTap: () => _push(context, const SudokuScreen())),
-                  _GameCard(title: 'Simon Says', subtitle: 'Memory colors',
-                    icon: Icons.palette_rounded, helpName: 'Simon Says',
+                    onTap: () => _push(context, const SudokuScreen()),
+                  ),
+                  _GameCard(
+                    title: 'Color Recall',
+                    subtitle: 'Memory colors',
+                    icon: Icons.palette_rounded,
+                    helpName: 'Color Recall',
                     gradient: const [Color(0xFFE53935), Color(0xFF1E88E5)],
                     players: '1 Player',
-                    onTap: () => _push(context, const SimonScreen())),
-                  _GameCard(title: 'Dots & Boxes', subtitle: 'Claim squares',
-                    icon: Icons.grid_4x4_rounded, helpName: 'Dots & Boxes',
+                    onTap: () => _push(context, const SimonScreen()),
+                  ),
+                  _GameCard(
+                    title: 'Dots & Boxes',
+                    subtitle: 'Claim squares',
+                    icon: Icons.grid_4x4_rounded,
+                    helpName: 'Dots & Boxes',
                     gradient: const [Color(0xFFFF8A65), Color(0xFFFF5722)],
                     players: '1-2 Players',
-                    onTap: () => _push(context, const DotsBoxesScreen())),
-                  _GameCard(title: 'Quiz', subtitle: 'Test your knowledge',
-                    icon: Icons.quiz_rounded, helpName: 'Quiz',
+                    onTap: () => _push(context, const DotsBoxesScreen()),
+                  ),
+                  _GameCard(
+                    title: 'Quiz',
+                    subtitle: 'Test your knowledge',
+                    icon: Icons.quiz_rounded,
+                    helpName: 'Quiz',
                     gradient: const [Color(0xFF7B68EE), Color(0xFFE040FB)],
                     players: '1-4 Players',
-                    onTap: () => _push(context, const QuizScreen())),
-                  _GameCard(title: 'Wordle', subtitle: 'Guess the word',
-                    icon: Icons.abc_rounded, helpName: 'Wordle',
+                    onTap: () => _push(context, const QuizScreen()),
+                  ),
+                  _GameCard(
+                    title: 'Five Letters',
+                    subtitle: 'Guess the word',
+                    icon: Icons.abc_rounded,
+                    helpName: 'Five Letters',
                     gradient: const [Color(0xFF538D4E), Color(0xFF3A6B35)],
                     players: '1 Player',
-                    onTap: () => _push(context, const WordleScreen())),
-                  _GameCard(title: 'Tetris', subtitle: 'Stack & clear',
-                    icon: Icons.view_module_rounded, helpName: 'Tetris',
+                    onTap: () => _push(context, const WordleScreen()),
+                  ),
+                  _GameCard(
+                    title: 'Falling Blocks',
+                    subtitle: 'Stack & clear',
+                    icon: Icons.view_module_rounded,
+                    helpName: 'Falling Blocks',
                     gradient: const [Color(0xFF4ECDC4), Color(0xFF2E7D8F)],
                     players: '1 Player',
-                    onTap: () => _push(context, const TetrisScreen())),
-                  _GameCard(title: 'Pac-Man', subtitle: 'Eat & escape',
-                    icon: Icons.pie_chart_rounded, helpName: 'Pac-Man',
+                    onTap: () => _push(context, const TetrisScreen()),
+                  ),
+                  _GameCard(
+                    title: 'Maze Munch',
+                    subtitle: 'Eat & escape',
+                    icon: Icons.pie_chart_rounded,
+                    helpName: 'Maze Munch',
                     gradient: const [Color(0xFFFFD54F), Color(0xFFFFA000)],
                     players: '1 Player',
-                    onTap: () => _push(context, const PacManScreen())),
-                  _GameCard(title: 'Stack', subtitle: 'Tap to stack',
-                    icon: Icons.view_agenda_rounded, helpName: 'Stack',
+                    onTap: () => _push(context, const PacManScreen()),
+                  ),
+                  _GameCard(
+                    title: 'Stack',
+                    subtitle: 'Tap to stack',
+                    icon: Icons.view_agenda_rounded,
+                    helpName: 'Stack',
                     gradient: const [Color(0xFF7AA5E0), Color(0xFFBA9BD6)],
                     players: '1 Player',
-                    onTap: () => _push(context, const StackGameScreen())),
-                  _GameCard(title: 'Headsup!', subtitle: 'Dumb Charades',
-                    icon: Icons.psychology_alt_rounded, helpName: 'Headsup!',
+                    onTap: () => _push(context, const StackGameScreen()),
+                  ),
+                  _GameCard(
+                    title: 'Guess It!',
+                    subtitle: 'Act out the clue',
+                    icon: Icons.psychology_alt_rounded,
+                    helpName: 'Guess It!',
                     gradient: const [Color(0xFFE040FB), Color(0xFF7B1FA2)],
                     players: '2+ Teams',
-                    onTap: () => _push(context, const HeadsUpScreen())),
+                    onTap: () => _push(context, const HeadsUpScreen()),
+                  ),
                 ]),
               ),
             ),
@@ -178,31 +272,55 @@ class HomeScreen extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 24,
+                    horizontal: 20,
+                  ),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [GameTheme.surface, GameTheme.surfaceLight.withValues(alpha: 0.5)]),
+                      colors: [
+                        GameTheme.surface,
+                        GameTheme.surfaceLight.withValues(alpha: 0.5),
+                      ],
+                    ),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: GameTheme.border)),
+                    border: Border.all(color: GameTheme.border),
+                  ),
                   child: Row(
                     children: [
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
                           color: GameTheme.accent.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12)),
-                        child: const Icon(Icons.rocket_launch_rounded, color: GameTheme.accent, size: 28)),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.rocket_launch_rounded,
+                          color: GameTheme.accent,
+                          size: 28,
+                        ),
+                      ),
                       const SizedBox(width: 16),
                       const Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('More games coming soon!',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700,
-                                color: GameTheme.textPrimary)),
+                            Text(
+                              'More games coming soon!',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: GameTheme.textPrimary,
+                              ),
+                            ),
                             SizedBox(height: 2),
-                            Text('Stay tuned for new additions',
-                              style: TextStyle(fontSize: 13, color: GameTheme.textSecondary)),
+                            Text(
+                              'Stay tuned for new additions',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: GameTheme.textSecondary,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -228,9 +346,15 @@ class _GameCard extends StatefulWidget {
   final List<Color> gradient;
   final VoidCallback onTap;
 
-  const _GameCard({required this.title, required this.subtitle, required this.icon,
-    required this.gradient, required this.players, required this.onTap,
-    required this.helpName});
+  const _GameCard({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.gradient,
+    required this.players,
+    required this.onTap,
+    required this.helpName,
+  });
 
   @override
   State<_GameCard> createState() => _GameCardState();
@@ -243,65 +367,127 @@ class _GameCardState extends State<_GameCard> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) { setState(() => _pressed = false); HapticFeedback.lightImpact(); widget.onTap(); },
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        HapticFeedback.lightImpact();
+        widget.onTap();
+      },
       onTapCancel: () => setState(() => _pressed = false),
       child: AnimatedScale(
         scale: _pressed ? 0.95 : 1.0,
         duration: const Duration(milliseconds: 100),
         child: Container(
           decoration: BoxDecoration(
-            gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
-              colors: widget.gradient),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: widget.gradient,
+            ),
             borderRadius: BorderRadius.circular(20),
-            boxShadow: [BoxShadow(color: widget.gradient.first.withValues(alpha: 0.3),
-              blurRadius: 16, offset: const Offset(0, 6))]),
-          child: Stack(children: [
-            Positioned(right: -15, bottom: -15,
-              child: Icon(widget.icon, size: 100, color: Colors.white.withValues(alpha: 0.12))),
-            Padding(padding: const EdgeInsets.all(18),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(
+            boxShadow: [
+              BoxShadow(
+                color: widget.gradient.first.withValues(alpha: 0.3),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                right: -15,
+                bottom: -15,
+                child: Icon(
+                  widget.icon,
+                  size: 100,
+                  color: Colors.white.withValues(alpha: 0.12),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(12)),
-                      child: Icon(widget.icon, color: Colors.white, size: 24)),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            widget.icon,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                        ),
+                        const Spacer(),
+                        GestureDetector(
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            GameHelp.show(context, widget.helpName);
+                          },
+                          child: Tooltip(
+                            message: 'How to Play',
+                            child: Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(
+                                Icons.help_outline_rounded,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                     const Spacer(),
-                    GestureDetector(
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                        GameHelp.show(context, widget.helpName);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(8)),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.help_outline_rounded, color: Colors.white, size: 13),
-                            SizedBox(width: 3),
-                            Text('How to Play',
-                              style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600,
-                                color: Colors.white)),
-                          ],
+                    Text(
+                      widget.title,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      widget.subtitle,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.white.withValues(alpha: 0.8),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        widget.players,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
                         ),
                       ),
                     ),
                   ],
                 ),
-                const Spacer(),
-                Text(widget.title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white)),
-                const SizedBox(height: 2),
-                Text(widget.subtitle, style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.8))),
-                const SizedBox(height: 8),
-                Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(8)),
-                  child: Text(widget.players, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.white))),
-              ])),
-          ]),
+              ),
+            ],
+          ),
         ),
       ),
     );

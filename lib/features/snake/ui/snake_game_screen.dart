@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/game_theme.dart';
 import '../../../core/utils/game_help.dart';
 import '../../../core/widgets/high_score_dialog.dart';
+import '../../../core/services/rewarded_ad_service.dart';
 
 class SnakeGameScreen extends StatefulWidget {
   const SnakeGameScreen({super.key});
@@ -18,10 +19,10 @@ enum Direction { up, down, left, right }
 
 // Special food types that appear randomly during gameplay
 enum FoodType {
-  normal,      // Regular food — always present
-  fake,        // Vanishes when snake gets within 3 cells
-  rockOrReal,  // Two foods appear — one real, one rock
-  timed,       // Bonus food — disappears after 30 seconds
+  normal, // Regular food — always present
+  fake, // Vanishes when snake gets within 3 cells
+  rockOrReal, // Two foods appear — one real, one rock
+  timed, // Bonus food — disappears after 30 seconds
 }
 
 enum SnakeDifficulty { easy, normal, hard }
@@ -60,18 +61,19 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
   int _bestScore = 0;
   bool _gameOver = false;
   bool _started = false;
+  bool _usedRewardedContinue = false;
   final _random = Random();
 
   // Special food system
   FoodType? _specialFoodType;
-  (int, int)? _specialFood;       // Special food position
-  (int, int)? _rockFood;          // Rock position (for rockOrReal)
-  bool _isSpecialReal = true;     // Which one is real in rock/real pair
+  (int, int)? _specialFood; // Special food position
+  (int, int)? _rockFood; // Rock position (for rockOrReal)
+  bool _isSpecialReal = true; // Which one is real in rock/real pair
   Timer? _specialTimer;
   Timer? _timedFoodTimer;
   int _timedFoodSeconds = 0;
-  bool _headShaking = false;      // Snake shakes head on rock
-  int _specialCooldown = 0;       // Ticks before next special can spawn
+  bool _headShaking = false; // Snake shakes head on rock
+  int _specialCooldown = 0; // Ticks before next special can spawn
 
   // Controls
   bool _useDpad = false; // false = swipe, true = d-pad
@@ -87,7 +89,11 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
     final prefs = await SharedPreferences.getInstance();
     final diffIdx = prefs.getInt('snake_difficulty') ?? 1;
     setState(() {
-      _bestScore = prefs.getInt('best_score_snake_${SnakeDifficulty.values[diffIdx].name}') ?? 0;
+      _bestScore =
+          prefs.getInt(
+            'best_score_snake_${SnakeDifficulty.values[diffIdx].name}',
+          ) ??
+          0;
       _difficulty = SnakeDifficulty.values[diffIdx];
     });
   }
@@ -130,12 +136,17 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
   }
 
   void _startGame() {
-    _snake = [(_rows ~/ 2, _cols ~/ 2), (_rows ~/ 2, _cols ~/ 2 - 1), (_rows ~/ 2, _cols ~/ 2 - 2)];
+    _snake = [
+      (_rows ~/ 2, _cols ~/ 2),
+      (_rows ~/ 2, _cols ~/ 2 - 1),
+      (_rows ~/ 2, _cols ~/ 2 - 2),
+    ];
     _direction = Direction.right;
     _nextDirection = Direction.right;
     _score = 0;
     _gameOver = false;
     _started = true;
+    _usedRewardedContinue = false;
     _specialFoodType = null;
     _specialFood = null;
     _rockFood = null;
@@ -152,8 +163,10 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
     while (true) {
       final r = _random.nextInt(_rows);
       final c = _random.nextInt(_cols);
-      if (!_snake.contains((r, c)) && (r, c) != _food &&
-          (r, c) != _specialFood && (r, c) != _rockFood) {
+      if (!_snake.contains((r, c)) &&
+          (r, c) != _food &&
+          (r, c) != _specialFood &&
+          (r, c) != _rockFood) {
         return (r, c);
       }
     }
@@ -169,7 +182,8 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
     // 15% chance each normal food eat after score >= 30
     if (_score < 30 || _random.nextInt(100) >= 15) return;
 
-    final type = FoodType.values[_random.nextInt(3) + 1]; // fake, rockOrReal, timed
+    final type =
+        FoodType.values[_random.nextInt(3) + 1]; // fake, rockOrReal, timed
     _specialFoodType = type;
     _specialCooldown = 40; // Minimum ticks before next special
 
@@ -199,7 +213,10 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
         _timedFoodSeconds = 30;
         _timedFoodTimer?.cancel();
         _timedFoodTimer = Timer.periodic(const Duration(seconds: 1), (t) {
-          if (!mounted) { t.cancel(); return; }
+          if (!mounted) {
+            t.cancel();
+            return;
+          }
           setState(() {
             _timedFoodSeconds--;
             if (_timedFoodSeconds <= 0) {
@@ -231,10 +248,14 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
 
     late (int, int) newHead;
     switch (_direction) {
-      case Direction.up:    newHead = (hr - 1, hc);
-      case Direction.down:  newHead = (hr + 1, hc);
-      case Direction.left:  newHead = (hr, hc - 1);
-      case Direction.right: newHead = (hr, hc + 1);
+      case Direction.up:
+        newHead = (hr - 1, hc);
+      case Direction.down:
+        newHead = (hr + 1, hc);
+      case Direction.left:
+        newHead = (hr, hc - 1);
+      case Direction.right:
+        newHead = (hr, hc + 1);
     }
 
     // Wall wrap-around
@@ -268,7 +289,8 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
         case FoodType.fake:
           // Fake food vanishes when snake gets within 3 cells
           if (_specialFood != null) {
-            final dist = (newHead.$1 - _specialFood!.$1).abs() +
+            final dist =
+                (newHead.$1 - _specialFood!.$1).abs() +
                 (newHead.$2 - _specialFood!.$2).abs();
             if (dist <= 3) {
               setState(() => _clearSpecial());
@@ -279,7 +301,8 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
         case FoodType.rockOrReal:
           if (newHead == _specialFood || newHead == _rockFood) {
             final ateSpecial = newHead == _specialFood;
-            final ateRealOne = (ateSpecial && _isSpecialReal) ||
+            final ateRealOne =
+                (ateSpecial && _isSpecialReal) ||
                 (!ateSpecial && !_isSpecialReal);
 
             if (ateRealOne) {
@@ -329,19 +352,45 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
     _specialTimer?.cancel();
     _timedFoodTimer?.cancel();
     _gameOver = true;
-    if (_score > _bestScore) { _bestScore = _score; _saveBestScore(); }
+    if (_score > _bestScore) {
+      _bestScore = _score;
+      _saveBestScore();
+    }
     HapticFeedback.heavyImpact();
     setState(() {});
-    final scoreNow = _score;
-    final diff = _difficulty;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      HighScoreDialog.submitIfQualifies(
-        context: context,
-        gameId: 'snake_${diff.name}',
-        gameName: 'Snake (${diff.label})',
-        score: scoreNow);
+  }
+
+  Future<void> _submitFinalScore() => HighScoreDialog.submitIfQualifies(
+    context: context,
+    gameId: 'snake_${_difficulty.name}',
+    gameName: 'Snake (${_difficulty.label})',
+    score: _score,
+  );
+
+  Future<void> _finishAndRestart() async {
+    if (_gameOver) await _submitFinalScore();
+    if (mounted) _startGame();
+  }
+
+  Future<void> _watchAdAndContinue() async {
+    if (_usedRewardedContinue || !_gameOver) return;
+    final earned = await RewardedAdService.instance.show();
+    if (!mounted || !earned) return;
+    setState(() {
+      // Restart from a safe position while preserving the score and difficulty.
+      _snake = [
+        (_rows ~/ 2, _cols ~/ 2),
+        (_rows ~/ 2, _cols ~/ 2 - 1),
+        (_rows ~/ 2, _cols ~/ 2 - 2),
+      ];
+      _direction = Direction.right;
+      _nextDirection = Direction.right;
+      _gameOver = false;
+      _usedRewardedContinue = true;
+      _clearSpecial();
+      _placeFood();
     });
+    _restartTimer();
   }
 
   void _changeDirection(Direction newDir) {
@@ -366,12 +415,14 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: GameTheme.accent, width: 1.5),
         ),
-        child: Text(d.label,
+        child: Text(
+          d.label,
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w700,
             color: selected ? Colors.white : GameTheme.accent,
-          )),
+          ),
+        ),
       ),
     );
   }
@@ -383,7 +434,8 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
         _changeDirection(dir);
       },
       child: Container(
-        width: 72, height: 72,
+        width: 72,
+        height: 72,
         decoration: BoxDecoration(
           color: GameTheme.surface,
           borderRadius: BorderRadius.circular(16),
@@ -394,7 +446,12 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
     );
   }
 
-  Widget _buildFoodWidget((int, int) pos, double cellSize, Color color, String emoji) {
+  Widget _buildFoodWidget(
+    (int, int) pos,
+    double cellSize,
+    Color color,
+    String emoji,
+  ) {
     return Positioned(
       left: pos.$2 * cellSize + 1,
       top: pos.$1 * cellSize + 1,
@@ -422,21 +479,31 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
       appBar: AppBar(
         title: const Text('Snake'),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded, color: GameTheme.textPrimary),
-          onPressed: () {
+          icon: const Icon(
+            Icons.arrow_back_ios_rounded,
+            color: GameTheme.textPrimary,
+          ),
+          onPressed: () async {
             _timer?.cancel();
+            if (_gameOver) await _submitFinalScore();
+            if (!context.mounted) return;
             Navigator.pop(context);
           },
         ),
         actions: [
           IconButton(
-            icon: Icon(_useDpad ? Icons.swipe_rounded : Icons.gamepad_rounded,
-              color: GameTheme.accent),
+            icon: Icon(
+              _useDpad ? Icons.swipe_rounded : Icons.gamepad_rounded,
+              color: GameTheme.accent,
+            ),
             tooltip: _useDpad ? 'Switch to Swipe' : 'Switch to D-Pad',
             onPressed: () => setState(() => _useDpad = !_useDpad),
           ),
           IconButton(
-            icon: const Icon(Icons.help_outline_rounded, color: GameTheme.accent),
+            icon: const Icon(
+              Icons.help_outline_rounded,
+              color: GameTheme.accent,
+            ),
             onPressed: () => GameHelp.show(context, 'Snake'),
           ),
         ],
@@ -445,8 +512,13 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
         child: LayoutBuilder(
           builder: (context, constraints) {
             // Calculate grid to fill available space — identical gameplay on all devices
-            final availW = min(constraints.maxWidth - 24, 560.0); // cap width for tablets
-            final dpadHeight = _useDpad ? 232.0 : 0.0; // 72 * 3 buttons + 8 + 8 padding
+            final availW = min(
+              constraints.maxWidth - 24,
+              560.0,
+            ); // cap width for tablets
+            final dpadHeight = _useDpad
+                ? 232.0
+                : 0.0; // 72 * 3 buttons + 8 + 8 padding
             final availH = constraints.maxHeight - 80 - dpadHeight;
 
             // Fixed 20 columns; rows scale with height. Keeps difficulty consistent phone→iPad.
@@ -460,17 +532,23 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
             // If grid shrank mid-game, reposition food/snake so they stay in bounds
             if (_started && !_gameOver) {
               final foodOut = _food.$1 >= _rows || _food.$2 >= _cols;
-              final snakeOut = _snake.any((p) => p.$1 >= _rows || p.$2 >= _cols);
-              final specOut = _specialFood != null &&
+              final snakeOut = _snake.any(
+                (p) => p.$1 >= _rows || p.$2 >= _cols,
+              );
+              final specOut =
+                  _specialFood != null &&
                   (_specialFood!.$1 >= _rows || _specialFood!.$2 >= _cols);
-              final rockOut = _rockFood != null &&
+              final rockOut =
+                  _rockFood != null &&
                   (_rockFood!.$1 >= _rows || _rockFood!.$2 >= _cols);
               if (foodOut || snakeOut || specOut || rockOut) {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   if (!mounted) return;
                   setState(() {
                     if (snakeOut) {
-                      _snake = _snake.map((p) => (p.$1 % _rows, p.$2 % _cols)).toList();
+                      _snake = _snake
+                          .map((p) => (p.$1 % _rows, p.$2 % _cols))
+                          .toList();
                     }
                     if (foodOut) _placeFood();
                     if (specOut || rockOut) _clearSpecial();
@@ -483,15 +561,30 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
               children: [
                 // Score bar
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 8,
+                  ),
+                  child: Wrap(
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
                     children: [
-                      Text('Score: $_score  ',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700,
-                              color: GameTheme.accent)),
-                      Text('Best: $_bestScore (${_difficulty.label})',
-                          style: const TextStyle(fontSize: 14, color: GameTheme.textSecondary)),
+                      Text(
+                        'Score: $_score',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: GameTheme.accent,
+                        ),
+                      ),
+                      Text(
+                        'Best: $_bestScore (${_difficulty.label})',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: GameTheme.textSecondary,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -509,9 +602,13 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
                         if (delta.distance < 15) return;
 
                         if (delta.dx.abs() > delta.dy.abs()) {
-                          _changeDirection(delta.dx > 0 ? Direction.right : Direction.left);
+                          _changeDirection(
+                            delta.dx > 0 ? Direction.right : Direction.left,
+                          );
                         } else {
-                          _changeDirection(delta.dy > 0 ? Direction.down : Direction.up);
+                          _changeDirection(
+                            delta.dy > 0 ? Direction.down : Direction.up,
+                          );
                         }
                         _swipeStart = d.localPosition;
                       },
@@ -521,50 +618,89 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
                         decoration: BoxDecoration(
                           color: const Color(0xFF0A1520),
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: GameTheme.border, width: 1.5),
+                          border: Border.all(
+                            color: GameTheme.border,
+                            width: 1.5,
+                          ),
                         ),
                         child: Stack(
                           children: [
                             // Grid lines
                             CustomPaint(
                               size: Size(gridW, gridH),
-                              painter: _GridPainter(cellSize: cellSize, cols: _cols, rows: _rows),
+                              painter: _GridPainter(
+                                cellSize: cellSize,
+                                cols: _cols,
+                                rows: _rows,
+                              ),
                             ),
 
                             // Normal food
-                            _buildFoodWidget(_food, cellSize, GameTheme.accentAlt, '\u{1F34E}'),
+                            _buildFoodWidget(
+                              _food,
+                              cellSize,
+                              GameTheme.accentAlt,
+                              '\u{1F34E}',
+                            ),
 
                             // Special foods
-                            if (_specialFoodType == FoodType.fake && _specialFood != null)
-                              _buildFoodWidget(_specialFood!, cellSize,
-                                const Color(0xFFFF9800), '\u{1F34A}'), // Orange — looks tempting
+                            if (_specialFoodType == FoodType.fake &&
+                                _specialFood != null)
+                              _buildFoodWidget(
+                                _specialFood!,
+                                cellSize,
+                                const Color(0xFFFF9800),
+                                '\u{1F34A}',
+                              ), // Orange — looks tempting
 
                             if (_specialFoodType == FoodType.rockOrReal) ...[
                               if (_specialFood != null)
-                                _buildFoodWidget(_specialFood!, cellSize,
-                                  const Color(0xFF66BB6A), _isSpecialReal ? '\u{1F34F}' : '\u{1FAA8}'),
+                                _buildFoodWidget(
+                                  _specialFood!,
+                                  cellSize,
+                                  const Color(0xFF66BB6A),
+                                  _isSpecialReal ? '\u{1F34F}' : '\u{1FAA8}',
+                                ),
                               if (_rockFood != null)
-                                _buildFoodWidget(_rockFood!, cellSize,
-                                  const Color(0xFF66BB6A), !_isSpecialReal ? '\u{1F34F}' : '\u{1FAA8}'),
+                                _buildFoodWidget(
+                                  _rockFood!,
+                                  cellSize,
+                                  const Color(0xFF66BB6A),
+                                  !_isSpecialReal ? '\u{1F34F}' : '\u{1FAA8}',
+                                ),
                             ],
 
-                            if (_specialFoodType == FoodType.timed && _specialFood != null) ...[
-                              _buildFoodWidget(_specialFood!, cellSize,
-                                const Color(0xFFFFD700), '\u{2B50}'),
+                            if (_specialFoodType == FoodType.timed &&
+                                _specialFood != null) ...[
+                              _buildFoodWidget(
+                                _specialFood!,
+                                cellSize,
+                                const Color(0xFFFFD700),
+                                '\u{2B50}',
+                              ),
                               // Timer badge
                               Positioned(
                                 left: _specialFood!.$2 * cellSize - 4,
                                 top: _specialFood!.$1 * cellSize - 10,
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                    vertical: 1,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: _timedFoodSeconds <= 10
-                                      ? const Color(0xFFEF5350) : const Color(0xFF333333),
+                                        ? const Color(0xFFEF5350)
+                                        : const Color(0xFF333333),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
-                                  child: Text('${_timedFoodSeconds}s',
-                                    style: const TextStyle(fontSize: 8,
-                                      fontWeight: FontWeight.w700, color: Colors.white)),
+                                  child: Text(
+                                    '${_timedFoodSeconds}s',
+                                    style: const TextStyle(
+                                      fontSize: 8,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ],
@@ -576,8 +712,11 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
                                 top: _snake[i].$1 * cellSize + 2,
                                 child: Container(
                                   width: cellSize - 4 - (i / _snake.length) * 4,
-                                  height: cellSize - 4 - (i / _snake.length) * 4,
-                                  margin: EdgeInsets.all((i / _snake.length) * 2),
+                                  height:
+                                      cellSize - 4 - (i / _snake.length) * 4,
+                                  margin: EdgeInsets.all(
+                                    (i / _snake.length) * 2,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: Color.lerp(
                                       const Color(0xFF4ECDC4),
@@ -594,17 +733,27 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
                             // Snake head
                             if (_snake.isNotEmpty)
                               Positioned(
-                                left: _snake[0].$2 * cellSize + (_headShaking ? (_random.nextDouble() * 4 - 2) : 0),
-                                top: _snake[0].$1 * cellSize + (_headShaking ? (_random.nextDouble() * 4 - 2) : 0),
+                                left:
+                                    _snake[0].$2 * cellSize +
+                                    (_headShaking
+                                        ? (_random.nextDouble() * 4 - 2)
+                                        : 0),
+                                top:
+                                    _snake[0].$1 * cellSize +
+                                    (_headShaking
+                                        ? (_random.nextDouble() * 4 - 2)
+                                        : 0),
                                 child: SizedBox(
                                   width: cellSize,
                                   height: cellSize,
                                   child: CustomPaint(
                                     painter: _SnakeHeadPainter(
-                                      direction: _started ? _direction : Direction.right,
+                                      direction: _started
+                                          ? _direction
+                                          : Direction.right,
                                       color: _headShaking
-                                        ? const Color(0xFFEF5350)
-                                        : const Color(0xFF4ECDC4),
+                                          ? const Color(0xFFEF5350)
+                                          : const Color(0xFF4ECDC4),
                                     ),
                                   ),
                                 ),
@@ -616,7 +765,9 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
                                 child: Container(
                                   padding: const EdgeInsets.all(26),
                                   decoration: BoxDecoration(
-                                    color: GameTheme.background.withValues(alpha: 0.92),
+                                    color: GameTheme.background.withValues(
+                                      alpha: 0.92,
+                                    ),
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   child: Column(
@@ -627,46 +778,104 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
                                         style: TextStyle(
                                           fontSize: 28,
                                           fontWeight: FontWeight.w800,
-                                          color: _gameOver ? GameTheme.accentAlt : GameTheme.accent,
+                                          color: _gameOver
+                                              ? GameTheme.accentAlt
+                                              : GameTheme.accent,
                                         ),
                                       ),
                                       if (_gameOver) ...[
                                         const SizedBox(height: 8),
-                                        Text('Score: $_score',
-                                            style: const TextStyle(color: GameTheme.textSecondary, fontSize: 16)),
+                                        Text(
+                                          'Score: $_score',
+                                          style: const TextStyle(
+                                            color: GameTheme.textSecondary,
+                                            fontSize: 16,
+                                          ),
+                                        ),
                                       ],
                                       const SizedBox(height: 16),
-                                      const Text('Difficulty',
-                                        style: TextStyle(fontSize: 12,
+                                      const Text(
+                                        'Difficulty',
+                                        style: TextStyle(
+                                          fontSize: 12,
                                           fontWeight: FontWeight.w700,
                                           letterSpacing: 1.2,
-                                          color: GameTheme.textSecondary)),
-                                      const SizedBox(height: 8),
-                                      Row(mainAxisSize: MainAxisSize.min, children: [
-                                        for (final d in SnakeDifficulty.values) ...[
-                                          _difficultyChip(d),
-                                          if (d != SnakeDifficulty.hard) const SizedBox(width: 6),
-                                        ],
-                                      ]),
-                                      const SizedBox(height: 16),
-                                      ElevatedButton(
-                                        onPressed: _startGame,
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: GameTheme.accent,
-                                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-                                          shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(12)),
-                                        ),
-                                        child: Text(
-                                          _gameOver ? 'Play Again' : 'Start Game',
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.w700, color: Colors.white),
+                                          color: GameTheme.textSecondary,
                                         ),
                                       ),
+                                      const SizedBox(height: 8),
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          for (final d
+                                              in SnakeDifficulty.values) ...[
+                                            _difficultyChip(d),
+                                            if (d != SnakeDifficulty.hard)
+                                              const SizedBox(width: 6),
+                                          ],
+                                        ],
+                                      ),
+                                      const SizedBox(height: 16),
+                                      ElevatedButton(
+                                        onPressed: _gameOver
+                                            ? _finishAndRestart
+                                            : _startGame,
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: GameTheme.accent,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 32,
+                                            vertical: 14,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          _gameOver
+                                              ? 'Play Again'
+                                              : 'Start Game',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                      if (_gameOver &&
+                                          !_usedRewardedContinue) ...[
+                                        const SizedBox(height: 10),
+                                        ValueListenableBuilder<bool>(
+                                          valueListenable: RewardedAdService
+                                              .instance
+                                              .isReady,
+                                          builder: (context, ready, _) =>
+                                              OutlinedButton.icon(
+                                                onPressed: ready
+                                                    ? _watchAdAndContinue
+                                                    : null,
+                                                icon: const Icon(
+                                                  Icons.ondemand_video_rounded,
+                                                ),
+                                                label: Text(
+                                                  ready
+                                                      ? 'Watch ad to continue'
+                                                      : 'Continue ad unavailable',
+                                                ),
+                                              ),
+                                        ),
+                                      ],
                                       if (!_gameOver) ...[
                                         const SizedBox(height: 10),
-                                        Text(_useDpad ? 'Use D-Pad to control' : 'Swipe to control',
-                                            style: const TextStyle(color: GameTheme.textSecondary, fontSize: 12)),
+                                        Text(
+                                          _useDpad
+                                              ? 'Use D-Pad to control'
+                                              : 'Swipe to control',
+                                          style: const TextStyle(
+                                            color: GameTheme.textSecondary,
+                                            fontSize: 12,
+                                          ),
+                                        ),
                                       ],
                                     ],
                                   ),
@@ -690,12 +899,21 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            _dpadButton(Icons.arrow_left_rounded, Direction.left),
+                            _dpadButton(
+                              Icons.arrow_left_rounded,
+                              Direction.left,
+                            ),
                             const SizedBox(width: 72),
-                            _dpadButton(Icons.arrow_right_rounded, Direction.right),
+                            _dpadButton(
+                              Icons.arrow_right_rounded,
+                              Direction.right,
+                            ),
                           ],
                         ),
-                        _dpadButton(Icons.arrow_drop_down_rounded, Direction.down),
+                        _dpadButton(
+                          Icons.arrow_drop_down_rounded,
+                          Direction.down,
+                        ),
                       ],
                     ),
                   )
@@ -723,10 +941,14 @@ class _SnakeHeadPainter extends CustomPainter {
     canvas.save();
     canvas.translate(center.dx, center.dy);
     switch (direction) {
-      case Direction.up:    canvas.rotate(-pi / 2);
-      case Direction.down:  canvas.rotate(pi / 2);
-      case Direction.left:  canvas.rotate(pi);
-      case Direction.right: break;
+      case Direction.up:
+        canvas.rotate(-pi / 2);
+      case Direction.down:
+        canvas.rotate(pi / 2);
+      case Direction.left:
+        canvas.rotate(pi);
+      case Direction.right:
+        break;
     }
     canvas.translate(-center.dx, -center.dy);
 
@@ -748,21 +970,57 @@ class _SnakeHeadPainter extends CustomPainter {
 
     // Eyes
     final eyeR = s * 0.10;
-    canvas.drawCircle(Offset(s * 0.55, s * 0.30), eyeR, Paint()..color = Colors.white);
-    canvas.drawCircle(Offset(s * 0.58, s * 0.30), eyeR * 0.55, Paint()..color = const Color(0xFF1A1A2E));
-    canvas.drawCircle(Offset(s * 0.60, s * 0.28), eyeR * 0.2, Paint()..color = Colors.white);
-    canvas.drawCircle(Offset(s * 0.55, s * 0.70), eyeR, Paint()..color = Colors.white);
-    canvas.drawCircle(Offset(s * 0.58, s * 0.70), eyeR * 0.55, Paint()..color = const Color(0xFF1A1A2E));
-    canvas.drawCircle(Offset(s * 0.60, s * 0.68), eyeR * 0.2, Paint()..color = Colors.white);
+    canvas.drawCircle(
+      Offset(s * 0.55, s * 0.30),
+      eyeR,
+      Paint()..color = Colors.white,
+    );
+    canvas.drawCircle(
+      Offset(s * 0.58, s * 0.30),
+      eyeR * 0.55,
+      Paint()..color = const Color(0xFF1A1A2E),
+    );
+    canvas.drawCircle(
+      Offset(s * 0.60, s * 0.28),
+      eyeR * 0.2,
+      Paint()..color = Colors.white,
+    );
+    canvas.drawCircle(
+      Offset(s * 0.55, s * 0.70),
+      eyeR,
+      Paint()..color = Colors.white,
+    );
+    canvas.drawCircle(
+      Offset(s * 0.58, s * 0.70),
+      eyeR * 0.55,
+      Paint()..color = const Color(0xFF1A1A2E),
+    );
+    canvas.drawCircle(
+      Offset(s * 0.60, s * 0.68),
+      eyeR * 0.2,
+      Paint()..color = Colors.white,
+    );
 
     // Tongue
     final tonguePaint = Paint()
       ..color = const Color(0xFFFF4444)
       ..strokeWidth = s * 0.04
       ..strokeCap = StrokeCap.round;
-    canvas.drawLine(Offset(s * 0.92, s * 0.50), Offset(s * 1.05, s * 0.50), tonguePaint);
-    canvas.drawLine(Offset(s * 1.05, s * 0.50), Offset(s * 1.10, s * 0.42), tonguePaint..strokeWidth = s * 0.025);
-    canvas.drawLine(Offset(s * 1.05, s * 0.50), Offset(s * 1.10, s * 0.58), tonguePaint);
+    canvas.drawLine(
+      Offset(s * 0.92, s * 0.50),
+      Offset(s * 1.05, s * 0.50),
+      tonguePaint,
+    );
+    canvas.drawLine(
+      Offset(s * 1.05, s * 0.50),
+      Offset(s * 1.10, s * 0.42),
+      tonguePaint..strokeWidth = s * 0.025,
+    );
+    canvas.drawLine(
+      Offset(s * 1.05, s * 0.50),
+      Offset(s * 1.10, s * 0.58),
+      tonguePaint,
+    );
 
     canvas.restore();
   }
@@ -775,7 +1033,11 @@ class _GridPainter extends CustomPainter {
   final double cellSize;
   final int cols;
   final int rows;
-  _GridPainter({required this.cellSize, required this.cols, required this.rows});
+  _GridPainter({
+    required this.cellSize,
+    required this.cols,
+    required this.rows,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -784,10 +1046,18 @@ class _GridPainter extends CustomPainter {
       ..strokeWidth = 0.5;
 
     for (int i = 1; i < cols; i++) {
-      canvas.drawLine(Offset(i * cellSize, 0), Offset(i * cellSize, size.height), paint);
+      canvas.drawLine(
+        Offset(i * cellSize, 0),
+        Offset(i * cellSize, size.height),
+        paint,
+      );
     }
     for (int i = 1; i < rows; i++) {
-      canvas.drawLine(Offset(0, i * cellSize), Offset(size.width, i * cellSize), paint);
+      canvas.drawLine(
+        Offset(0, i * cellSize),
+        Offset(size.width, i * cellSize),
+        paint,
+      );
     }
   }
 

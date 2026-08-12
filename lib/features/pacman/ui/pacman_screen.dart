@@ -87,11 +87,7 @@ const _mazes = <List<String>>[
   ],
 ];
 
-const _mazeNames = <String>[
-  'Classic',
-  'Cross Quarters',
-  'Open Plaza',
-];
+const _mazeNames = <String>['Classic', 'Cross Quarters', 'Open Plaza'];
 
 class _Actor {
   int row, col;
@@ -105,9 +101,13 @@ class _Ghost extends _Actor {
   bool frightened = false;
   bool eaten = false;
   final int spawnRow, spawnCol;
-  _Ghost({required this.id, required this.color,
-    required super.row, required super.col})
-      : spawnRow = row, spawnCol = col;
+  _Ghost({
+    required this.id,
+    required this.color,
+    required super.row,
+    required super.col,
+  }) : spawnRow = row,
+       spawnCol = col;
 }
 
 class _PacManScreenState extends State<PacManScreen> {
@@ -131,11 +131,11 @@ class _PacManScreenState extends State<PacManScreen> {
 
   // Bonus fruit: appears once per level after half the dots are eaten.
   (int, int)? _fruitPos;
-  int _fruitTicks = 0;           // remaining ticks until it disappears
+  int _fruitTicks = 0; // remaining ticks until it disappears
   bool _fruitSpawnedThisLevel = false;
 
   // Level intro banner
-  int _levelIntroTicks = 0;      // counts down each tick
+  int _levelIntroTicks = 0; // counts down each tick
 
   // Ghost throttle — early levels give the player a head start. On level 1,
   // ghosts skip 1 move in every 3 ticks (67% speed); level 2 → 80%; level 3+ full.
@@ -173,7 +173,11 @@ class _PacManScreenState extends State<PacManScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       HighScoreDialog.submitIfQualifies(
-        context: context, gameId: 'pacman', gameName: 'Pac-Man', score: _score);
+        context: context,
+        gameId: 'pacman',
+        gameName: 'Maze Munch',
+        score: _score,
+      );
     });
   }
 
@@ -191,7 +195,10 @@ class _PacManScreenState extends State<PacManScreen> {
   void _resetMaze() {
     final maze = _currentMaze;
     _tiles = maze.map((r) {
-      return r.split('').map((ch) => ch == 'P' || ch == 'G' ? ' ' : ch).toList();
+      return r
+          .split('')
+          .map((ch) => ch == 'P' || ch == 'G' ? ' ' : ch)
+          .toList();
     }).toList();
 
     _dotsRemaining = 0;
@@ -212,21 +219,27 @@ class _PacManScreenState extends State<PacManScreen> {
         if (ch == '.' || ch == 'o') _dotsRemaining++;
         if (ch == 'P') _pac = _Actor(row: r, col: c, dir: _Dir.left);
         if (ch == 'G') {
-          _ghosts.add(_Ghost(
-            id: ghostIdx,
-            color: ghostColors[ghostIdx % 4],
-            row: r, col: c,
-          ));
+          _ghosts.add(
+            _Ghost(
+              id: ghostIdx,
+              color: ghostColors[ghostIdx % 4],
+              row: r,
+              col: c,
+            ),
+          );
           ghostIdx++;
         }
       }
     }
     while (_ghosts.length < 2) {
-      _ghosts.add(_Ghost(
-        id: _ghosts.length,
-        color: ghostColors[_ghosts.length % 4],
-        row: _rows ~/ 2, col: _cols ~/ 2,
-      ));
+      _ghosts.add(
+        _Ghost(
+          id: _ghosts.length,
+          color: ghostColors[_ghosts.length % 4],
+          row: _rows ~/ 2,
+          col: _cols ~/ 2,
+        ),
+      );
     }
     _initialDots = _dotsRemaining;
     _fruitPos = null;
@@ -339,11 +352,16 @@ class _PacManScreenState extends State<PacManScreen> {
 
   (int, int) _stepCoord(int r, int c, _Dir d) {
     switch (d) {
-      case _Dir.up:    return (r - 1, c);
-      case _Dir.down:  return (r + 1, c);
-      case _Dir.left:  return (r, c - 1);
-      case _Dir.right: return (r, c + 1);
-      case _Dir.none:  return (r, c);
+      case _Dir.up:
+        return (r - 1, c);
+      case _Dir.down:
+        return (r + 1, c);
+      case _Dir.left:
+        return (r, c - 1);
+      case _Dir.right:
+        return (r, c + 1);
+      case _Dir.none:
+        return (r, c);
     }
   }
 
@@ -391,7 +409,13 @@ class _PacManScreenState extends State<PacManScreen> {
       _score += 50;
       _dotsRemaining--;
       // Longer fright on level 1 (70 ticks) and level 2 (60) to reward exploration.
-      _frightTicks = (_level == 1 ? 70 : _level == 2 ? 60 : (55 - (_level - 3) * 5)).clamp(20, 70);
+      _frightTicks =
+          (_level == 1
+                  ? 70
+                  : _level == 2
+                  ? 60
+                  : (55 - (_level - 3) * 5))
+              .clamp(20, 70);
       _ghostEatChain = 0;
       for (final g in _ghosts) {
         if (!g.eaten) g.frightened = true;
@@ -424,8 +448,11 @@ class _PacManScreenState extends State<PacManScreen> {
     // Move ghosts — slower on easy levels (level 1: 2 of 3 ticks, level 2: 4 of 5).
     _tickCounter++;
     bool moveGhostsThisTick = true;
-    if (_level == 1 && _tickCounter % 3 == 0) moveGhostsThisTick = false;
-    else if (_level == 2 && _tickCounter % 5 == 0) moveGhostsThisTick = false;
+    if (_level == 1 && _tickCounter % 3 == 0) {
+      moveGhostsThisTick = false;
+    } else if (_level == 2 && _tickCounter % 5 == 0) {
+      moveGhostsThisTick = false;
+    }
 
     if (moveGhostsThisTick) {
       for (final g in _ghosts) {
@@ -440,7 +467,9 @@ class _PacManScreenState extends State<PacManScreen> {
     if (_frightTicks > 0) {
       _frightTicks--;
       if (_frightTicks == 0) {
-        for (final g in _ghosts) { g.frightened = false; }
+        for (final g in _ghosts) {
+          g.frightened = false;
+        }
       }
     }
 
@@ -449,7 +478,10 @@ class _PacManScreenState extends State<PacManScreen> {
       _won = true;
       _timer?.cancel();
       _mouthTimer?.cancel();
-      if (_score > _bestScore) { _bestScore = _score; _saveBest(); }
+      if (_score > _bestScore) {
+        _bestScore = _score;
+        _saveBest();
+      }
       HapticFeedback.heavyImpact();
       _promptHighScore();
     }
@@ -467,7 +499,8 @@ class _PacManScreenState extends State<PacManScreen> {
           g.eaten = true;
           g.frightened = false;
           // Send back to spawn
-          g.row = g.spawnRow; g.col = g.spawnCol;
+          g.row = g.spawnRow;
+          g.col = g.spawnCol;
           HapticFeedback.heavyImpact();
         } else {
           _lives--;
@@ -476,7 +509,10 @@ class _PacManScreenState extends State<PacManScreen> {
             _gameOver = true;
             _timer?.cancel();
             _mouthTimer?.cancel();
-            if (_score > _bestScore) { _bestScore = _score; _saveBest(); }
+            if (_score > _bestScore) {
+              _bestScore = _score;
+              _saveBest();
+            }
             _promptHighScore();
           } else {
             _resetPositionsAfterDeath();
@@ -522,7 +558,10 @@ class _PacManScreenState extends State<PacManScreen> {
         final dist = (wr - target.$1).abs() + (wc - target.$2).abs();
         // Lower distance = better. Invert for comparison.
         final score = 1000 - dist;
-        if (score > bestScore) { bestScore = score; chosen = d; }
+        if (score > bestScore) {
+          bestScore = score;
+          chosen = d;
+        }
       }
     }
 
@@ -554,11 +593,16 @@ class _PacManScreenState extends State<PacManScreen> {
 
   _Dir _reverse(_Dir d) {
     switch (d) {
-      case _Dir.up:    return _Dir.down;
-      case _Dir.down:  return _Dir.up;
-      case _Dir.left:  return _Dir.right;
-      case _Dir.right: return _Dir.left;
-      case _Dir.none:  return _Dir.none;
+      case _Dir.up:
+        return _Dir.down;
+      case _Dir.down:
+        return _Dir.up;
+      case _Dir.left:
+        return _Dir.right;
+      case _Dir.right:
+        return _Dir.left;
+      case _Dir.none:
+        return _Dir.none;
     }
   }
 
@@ -579,7 +623,8 @@ class _PacManScreenState extends State<PacManScreen> {
     return GestureDetector(
       onTap: () => _changeDirection(d),
       child: Container(
-        width: 62, height: 62,
+        width: 62,
+        height: 62,
         decoration: BoxDecoration(
           color: GameTheme.surface,
           borderRadius: BorderRadius.circular(14),
@@ -595,190 +640,300 @@ class _PacManScreenState extends State<PacManScreen> {
     return Scaffold(
       backgroundColor: GameTheme.background,
       appBar: AppBar(
-        title: const Text('Pac-Man'),
+        title: const Text('Maze Munch'),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded, color: GameTheme.textPrimary),
-          onPressed: () { _timer?.cancel(); _mouthTimer?.cancel(); Navigator.pop(context); },
+          icon: const Icon(
+            Icons.arrow_back_ios_rounded,
+            color: GameTheme.textPrimary,
+          ),
+          onPressed: () {
+            _timer?.cancel();
+            _mouthTimer?.cancel();
+            Navigator.pop(context);
+          },
         ),
         actions: [
           IconButton(
-            icon: Icon(_useDpad ? Icons.swipe_rounded : Icons.gamepad_rounded,
-              color: GameTheme.accent),
+            icon: Icon(
+              _useDpad ? Icons.swipe_rounded : Icons.gamepad_rounded,
+              color: GameTheme.accent,
+            ),
             tooltip: _useDpad ? 'Switch to Swipe' : 'Switch to D-Pad',
             onPressed: () => setState(() => _useDpad = !_useDpad),
           ),
           IconButton(
-            icon: const Icon(Icons.help_outline_rounded, color: GameTheme.accent),
-            onPressed: () => GameHelp.show(context, 'Pac-Man'),
+            icon: const Icon(
+              Icons.help_outline_rounded,
+              color: GameTheme.accent,
+            ),
+            onPressed: () => GameHelp.show(context, 'Maze Munch'),
           ),
         ],
       ),
       body: SafeArea(
-        child: LayoutBuilder(builder: (context, constraints) {
-          final dpadH = _useDpad ? 200.0 : 0.0;
-          final availW = min(constraints.maxWidth - 16, 680.0);
-          final availH = constraints.maxHeight - 80 - dpadH;
-          final cellW = availW / _cols;
-          final cellH = availH / _rows;
-          final cellSize = min(cellW, cellH);
-          final boardW = cellSize * _cols;
-          final boardH = cellSize * _rows;
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final dpadH = _useDpad ? 200.0 : 0.0;
+            final availW = min(constraints.maxWidth - 16, 680.0);
+            final availH = constraints.maxHeight - 80 - dpadH;
+            final cellW = availW / _cols;
+            final cellH = availH / _rows;
+            final cellSize = min(cellW, cellH);
+            final boardW = cellSize * _cols;
+            final boardH = cellSize * _rows;
 
-          return Column(children: [
-            // HUD
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _stat('SCORE', '$_score'),
-                  _stat('LIVES', '$_lives'),
-                  _stat('LEVEL', '$_level'),
-                  _stat('BEST', '$_bestScore'),
-                ],
-              ),
-            ),
-
-            Expanded(child: Center(child: GestureDetector(
-              onPanStart: (d) => _swipeStart = d.localPosition,
-              onPanUpdate: (d) {
-                if (_swipeStart == null) return;
-                final delta = d.localPosition - _swipeStart!;
-                if (delta.distance < 18) return;
-                if (delta.dx.abs() > delta.dy.abs()) {
-                  _changeDirection(delta.dx > 0 ? _Dir.right : _Dir.left);
-                } else {
-                  _changeDirection(delta.dy > 0 ? _Dir.down : _Dir.up);
-                }
-                _swipeStart = d.localPosition;
-              },
-              child: Container(
-                width: boardW, height: boardH,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF050812),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: GameTheme.border, width: 1.5),
-                ),
-                child: Stack(children: [
-                  // Maze tiles (walls + dots)
-                  for (int r = 0; r < _rows; r++)
-                    for (int c = 0; c < _cols; c++)
-                      _tileWidget(r, c, cellSize),
-
-                  // Ghosts (animated for smooth glide between tiles)
-                  for (int i = 0; i < _ghosts.length; i++)
-                    AnimatedPositioned(
-                      key: ValueKey('ghost-$i'),
-                      duration: _tickDuration,
-                      curve: Curves.linear,
-                      left: _ghosts[i].col * cellSize,
-                      top: _ghosts[i].row * cellSize,
-                      width: cellSize, height: cellSize,
-                      child: _ghostWidget(_ghosts[i], cellSize),
-                    ),
-
-                  // Pac-Man (animated for smooth glide between tiles)
-                  AnimatedPositioned(
-                    duration: _tickDuration,
-                    curve: Curves.linear,
-                    left: _pac.col * cellSize,
-                    top: _pac.row * cellSize,
-                    width: cellSize, height: cellSize,
-                    child: _pacWidget(cellSize),
+            return Column(
+              children: [
+                // HUD
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 6,
                   ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _stat('SCORE', '$_score'),
+                      _stat('LIVES', '$_lives'),
+                      _stat('LEVEL', '$_level'),
+                      _stat('BEST', '$_bestScore'),
+                    ],
+                  ),
+                ),
 
-                  // Bonus fruit
-                  if (_fruitPos != null)
-                    Positioned(
-                      left: _fruitPos!.$2 * cellSize,
-                      top: _fruitPos!.$1 * cellSize,
-                      child: SizedBox(
-                        width: cellSize, height: cellSize,
-                        child: Center(child: Text('\u{1F352}',
-                          style: TextStyle(fontSize: cellSize * 0.8))),
+                Expanded(
+                  child: Center(
+                    child: GestureDetector(
+                      onPanStart: (d) => _swipeStart = d.localPosition,
+                      onPanUpdate: (d) {
+                        if (_swipeStart == null) return;
+                        final delta = d.localPosition - _swipeStart!;
+                        if (delta.distance < 18) return;
+                        if (delta.dx.abs() > delta.dy.abs()) {
+                          _changeDirection(
+                            delta.dx > 0 ? _Dir.right : _Dir.left,
+                          );
+                        } else {
+                          _changeDirection(delta.dy > 0 ? _Dir.down : _Dir.up);
+                        }
+                        _swipeStart = d.localPosition;
+                      },
+                      child: Container(
+                        width: boardW,
+                        height: boardH,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF050812),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: GameTheme.border,
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Stack(
+                          children: [
+                            // Maze tiles (walls + dots)
+                            for (int r = 0; r < _rows; r++)
+                              for (int c = 0; c < _cols; c++)
+                                _tileWidget(r, c, cellSize),
+
+                            // Ghosts (animated for smooth glide between tiles)
+                            for (int i = 0; i < _ghosts.length; i++)
+                              AnimatedPositioned(
+                                key: ValueKey('ghost-$i'),
+                                duration: _tickDuration,
+                                curve: Curves.linear,
+                                left: _ghosts[i].col * cellSize,
+                                top: _ghosts[i].row * cellSize,
+                                width: cellSize,
+                                height: cellSize,
+                                child: _ghostWidget(_ghosts[i], cellSize),
+                              ),
+
+                            // Pac-Man (animated for smooth glide between tiles)
+                            AnimatedPositioned(
+                              duration: _tickDuration,
+                              curve: Curves.linear,
+                              left: _pac.col * cellSize,
+                              top: _pac.row * cellSize,
+                              width: cellSize,
+                              height: cellSize,
+                              child: _pacWidget(cellSize),
+                            ),
+
+                            // Bonus fruit
+                            if (_fruitPos != null)
+                              Positioned(
+                                left: _fruitPos!.$2 * cellSize,
+                                top: _fruitPos!.$1 * cellSize,
+                                child: SizedBox(
+                                  width: cellSize,
+                                  height: cellSize,
+                                  child: Center(
+                                    child: Text(
+                                      '\u{1F352}',
+                                      style: TextStyle(
+                                        fontSize: cellSize * 0.8,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                            // Level intro banner
+                            if (_levelIntroTicks > 0 && _started && !_gameOver)
+                              Positioned.fill(
+                                child: Center(
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 24,
+                                      vertical: 16,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: GameTheme.background.withValues(
+                                        alpha: 0.85,
+                                      ),
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          'Wave $_level',
+                                          style: const TextStyle(
+                                            fontSize: 22,
+                                            fontWeight: FontWeight.w800,
+                                            color: GameTheme.accent,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          _currentMazeName,
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            color: GameTheme.textSecondary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                            // Overlay: start / game-over / win
+                            if (!_started || _gameOver || _won)
+                              Positioned.fill(
+                                child: Center(
+                                  child: Container(
+                                    padding: const EdgeInsets.all(24),
+                                    decoration: BoxDecoration(
+                                      color: GameTheme.background.withValues(
+                                        alpha: 0.92,
+                                      ),
+                                      borderRadius: BorderRadius.circular(18),
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          _won
+                                              ? 'Cleared!'
+                                              : _gameOver
+                                              ? 'Game Over'
+                                              : 'Maze Munch',
+                                          style: TextStyle(
+                                            fontSize: 26,
+                                            fontWeight: FontWeight.w800,
+                                            color: _won
+                                                ? GameTheme.accent
+                                                : _gameOver
+                                                ? GameTheme.accentAlt
+                                                : GameTheme.accent,
+                                          ),
+                                        ),
+                                        if (_gameOver || _won) ...[
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            'Score: $_score',
+                                            style: const TextStyle(
+                                              color: GameTheme.textSecondary,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ],
+                                        const SizedBox(height: 16),
+                                        ElevatedButton(
+                                          onPressed: _won
+                                              ? _nextLevel
+                                              : _startGame,
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: GameTheme.accent,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 28,
+                                              vertical: 12,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            _won
+                                                ? 'Next Wave'
+                                                : _gameOver
+                                                ? 'Play Again'
+                                                : 'Start',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w700,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                        if (!_started && !_gameOver) ...[
+                                          const SizedBox(height: 10),
+                                          Text(
+                                            _useDpad
+                                                ? 'Use D-Pad to move'
+                                                : 'Swipe to change direction',
+                                            style: const TextStyle(
+                                              color: GameTheme.textSecondary,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
                     ),
+                  ),
+                ),
 
-                  // Level intro banner
-                  if (_levelIntroTicks > 0 && _started && !_gameOver)
-                    Positioned.fill(child: Center(child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                      decoration: BoxDecoration(
-                        color: GameTheme.background.withValues(alpha: 0.85),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Column(mainAxisSize: MainAxisSize.min, children: [
-                        Text('Wave $_level',
-                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800,
-                            color: GameTheme.accent)),
-                        const SizedBox(height: 2),
-                        Text(_currentMazeName,
-                          style: const TextStyle(fontSize: 14, color: GameTheme.textSecondary)),
-                      ]),
-                    ))),
-
-                  // Overlay: start / game-over / win
-                  if (!_started || _gameOver || _won)
-                    Positioned.fill(child: Center(child: Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: GameTheme.background.withValues(alpha: 0.92),
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      child: Column(mainAxisSize: MainAxisSize.min, children: [
-                        Text(
-                          _won ? 'Cleared!' : _gameOver ? 'Game Over' : 'Pac-Man',
-                          style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800,
-                            color: _won ? GameTheme.accent
-                                : _gameOver ? GameTheme.accentAlt
-                                : GameTheme.accent),
+                // D-Pad
+                if (_useDpad && _started && !_gameOver && !_won)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _dpadButton(Icons.arrow_drop_up_rounded, _Dir.up),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _dpadButton(Icons.arrow_left_rounded, _Dir.left),
+                            const SizedBox(width: 62),
+                            _dpadButton(Icons.arrow_right_rounded, _Dir.right),
+                          ],
                         ),
-                        if (_gameOver || _won) ...[
-                          const SizedBox(height: 6),
-                          Text('Score: $_score',
-                            style: const TextStyle(color: GameTheme.textSecondary, fontSize: 14)),
-                        ],
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _won ? _nextLevel : _startGame,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: GameTheme.accent,
-                            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
-                          ),
-                          child: Text(
-                            _won ? 'Next Wave' : _gameOver ? 'Play Again' : 'Start',
-                            style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.white),
-                          ),
-                        ),
-                        if (!_started && !_gameOver) ...[
-                          const SizedBox(height: 10),
-                          Text(_useDpad ? 'Use D-Pad to move' : 'Swipe to change direction',
-                            style: const TextStyle(color: GameTheme.textSecondary, fontSize: 12)),
-                        ],
-                      ]),
-                    ))),
-                ]),
-              ),
-            ))),
-
-            // D-Pad
-            if (_useDpad && _started && !_gameOver && !_won)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  _dpadButton(Icons.arrow_drop_up_rounded, _Dir.up),
-                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    _dpadButton(Icons.arrow_left_rounded, _Dir.left),
-                    const SizedBox(width: 62),
-                    _dpadButton(Icons.arrow_right_rounded, _Dir.right),
-                  ]),
-                  _dpadButton(Icons.arrow_drop_down_rounded, _Dir.down),
-                ]),
-              )
-            else
-              const SizedBox(height: 8),
-          ]);
-        }),
+                        _dpadButton(Icons.arrow_drop_down_rounded, _Dir.down),
+                      ],
+                    ),
+                  )
+                else
+                  const SizedBox(height: 8),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -792,34 +947,49 @@ class _PacManScreenState extends State<PacManScreen> {
           color: const Color(0xFF1F3A8A),
           borderRadius: BorderRadius.circular(size * 0.2),
           boxShadow: [
-            BoxShadow(color: const Color(0xFF3B5FE0).withValues(alpha: 0.3),
-              blurRadius: 2, spreadRadius: -1),
+            BoxShadow(
+              color: const Color(0xFF3B5FE0).withValues(alpha: 0.3),
+              blurRadius: 2,
+              spreadRadius: -1,
+            ),
           ],
         ),
       );
     } else if (ch == '.') {
-      inner = Center(child: Container(
-        width: size * 0.2, height: size * 0.2,
-        decoration: const BoxDecoration(
-          color: Color(0xFFF4D58D), shape: BoxShape.circle,
+      inner = Center(
+        child: Container(
+          width: size * 0.2,
+          height: size * 0.2,
+          decoration: const BoxDecoration(
+            color: Color(0xFFF4D58D),
+            shape: BoxShape.circle,
+          ),
         ),
-      ));
+      );
     } else if (ch == 'o') {
-      inner = Center(child: Container(
-        width: size * 0.55, height: size * 0.55,
-        decoration: BoxDecoration(
-          color: const Color(0xFFF4D58D), shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(color: const Color(0xFFF4D58D).withValues(alpha: 0.6),
-              blurRadius: 4),
-          ],
+      inner = Center(
+        child: Container(
+          width: size * 0.55,
+          height: size * 0.55,
+          decoration: BoxDecoration(
+            color: const Color(0xFFF4D58D),
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFF4D58D).withValues(alpha: 0.6),
+                blurRadius: 4,
+              ),
+            ],
+          ),
         ),
-      ));
+      );
     }
     if (inner == null) return const SizedBox.shrink();
     return Positioned(
-      left: c * size, top: r * size,
-      width: size, height: size,
+      left: c * size,
+      top: r * size,
+      width: size,
+      height: size,
       child: Padding(
         padding: EdgeInsets.all(ch == '#' ? 0 : size * 0.1),
         child: inner,
@@ -831,20 +1001,30 @@ class _PacManScreenState extends State<PacManScreen> {
     final padding = size * 0.08;
     final double angle;
     switch (_pac.dir) {
-      case _Dir.up:    angle = -pi / 2; break;
-      case _Dir.down:  angle = pi / 2; break;
-      case _Dir.left:  angle = pi; break;
+      case _Dir.up:
+        angle = -pi / 2;
+        break;
+      case _Dir.down:
+        angle = pi / 2;
+        break;
+      case _Dir.left:
+        angle = pi;
+        break;
       case _Dir.right:
-      case _Dir.none:  angle = 0;
+      case _Dir.none:
+        angle = 0;
     }
     return SizedBox(
-      width: size, height: size,
+      width: size,
+      height: size,
       child: Padding(
         padding: EdgeInsets.all(padding),
         child: Transform.rotate(
           angle: angle,
           child: CustomPaint(
-            painter: _PacPainter(mouthOpen: _mouthOpen && _started && !_gameOver),
+            painter: _PacPainter(
+              mouthOpen: _mouthOpen && _started && !_gameOver,
+            ),
           ),
         ),
       ),
@@ -856,33 +1036,53 @@ class _PacManScreenState extends State<PacManScreen> {
     if (g.eaten) {
       c = const Color(0xFFE0E0E0);
     } else if (g.frightened) {
-      final blinking = _frightTicks > 0 && _frightTicks < 12 && _frightTicks.isEven;
+      final blinking =
+          _frightTicks > 0 && _frightTicks < 12 && _frightTicks.isEven;
       c = blinking ? const Color(0xFFF4F4F4) : const Color(0xFF4564FF);
     } else {
       c = g.color;
     }
     final padding = size * 0.1;
     return SizedBox(
-      width: size, height: size,
+      width: size,
+      height: size,
       child: Padding(
         padding: EdgeInsets.all(padding),
         child: CustomPaint(
-          painter: _GhostPainter(color: c, eaten: g.eaten, frightened: g.frightened),
+          painter: _GhostPainter(
+            color: c,
+            eaten: g.eaten,
+            frightened: g.frightened,
+          ),
         ),
       ),
     );
   }
 
   Widget _stat(String label, String value) {
-    return Column(mainAxisSize: MainAxisSize.min, children: [
-      Text(label,
-        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700,
-          color: GameTheme.textSecondary, letterSpacing: 1.2)),
-      const SizedBox(height: 2),
-      Text(value,
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800,
-          color: GameTheme.accent)),
-    ]);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            color: GameTheme.textSecondary,
+            letterSpacing: 1.2,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+            color: GameTheme.accent,
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -904,8 +1104,7 @@ class _PacPainter extends CustomPainter {
     final sweep = 2 * pi - mouthAngle;
     final path = Path()
       ..moveTo(center.dx, center.dy)
-      ..arcTo(Rect.fromCircle(center: center, radius: r),
-        start, sweep, false)
+      ..arcTo(Rect.fromCircle(center: center, radius: r), start, sweep, false)
       ..close();
     canvas.drawPath(path, paint);
   }
@@ -918,7 +1117,11 @@ class _GhostPainter extends CustomPainter {
   final Color color;
   final bool eaten;
   final bool frightened;
-  _GhostPainter({required this.color, required this.eaten, required this.frightened});
+  _GhostPainter({
+    required this.color,
+    required this.eaten,
+    required this.frightened,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -930,8 +1133,11 @@ class _GhostPainter extends CustomPainter {
     final path = Path();
     path.moveTo(0, h);
     path.lineTo(0, h * 0.5);
-    path.arcToPoint(Offset(w, h * 0.5),
-      radius: Radius.circular(w / 2), clockwise: true);
+    path.arcToPoint(
+      Offset(w, h * 0.5),
+      radius: Radius.circular(w / 2),
+      clockwise: true,
+    );
     path.lineTo(w, h);
     // Wavy bottom
     const waves = 4;
@@ -946,7 +1152,8 @@ class _GhostPainter extends CustomPainter {
 
     // Eyes — skip if eaten (just show eyes floating)
     final eyeWhite = Paint()..color = Colors.white;
-    final pupil = Paint()..color = frightened ? const Color(0xFFFFE082) : const Color(0xFF1A237E);
+    final pupil = Paint()
+      ..color = frightened ? const Color(0xFFFFE082) : const Color(0xFF1A237E);
     final eyeR = w * 0.14;
     final leftEye = Offset(w * 0.32, h * 0.42);
     final rightEye = Offset(w * 0.68, h * 0.42);
@@ -976,8 +1183,11 @@ class _GhostPainter extends CustomPainter {
       for (int i = 0; i <= segments; i++) {
         final px = mx + (mw / segments) * i;
         final py = my + (i.isOdd ? -w * 0.05 : w * 0.05);
-        if (i == 0) { mouthPath.moveTo(px, py); }
-        else { mouthPath.lineTo(px, py); }
+        if (i == 0) {
+          mouthPath.moveTo(px, py);
+        } else {
+          mouthPath.lineTo(px, py);
+        }
       }
       canvas.drawPath(mouthPath, mouthPaint);
       return;

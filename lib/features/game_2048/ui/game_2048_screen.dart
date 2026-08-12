@@ -38,11 +38,16 @@ final _themes = [
     lowTextColor: const Color(0xFF776E65),
     highTextColor: Colors.white,
     tileColors: {
-      2: const Color(0xFFEEE4DA), 4: const Color(0xFFEDE0C8),
-      8: const Color(0xFFF2B179), 16: const Color(0xFFF59563),
-      32: const Color(0xFFF67C5F), 64: const Color(0xFFF65E3B),
-      128: const Color(0xFFEDCF72), 256: const Color(0xFFEDCC61),
-      512: const Color(0xFFEDC850), 1024: const Color(0xFFEDC53F),
+      2: const Color(0xFFEEE4DA),
+      4: const Color(0xFFEDE0C8),
+      8: const Color(0xFFF2B179),
+      16: const Color(0xFFF59563),
+      32: const Color(0xFFF67C5F),
+      64: const Color(0xFFF65E3B),
+      128: const Color(0xFFEDCF72),
+      256: const Color(0xFFEDCC61),
+      512: const Color(0xFFEDC850),
+      1024: const Color(0xFFEDC53F),
       2048: const Color(0xFFEDC22E),
     },
   ),
@@ -56,11 +61,16 @@ final _themes = [
     lowTextColor: const Color(0xFF5C3D1E),
     highTextColor: const Color(0xFFFFF8E7),
     tileColors: {
-      2: const Color(0xFFF5DEB3), 4: const Color(0xFFDEB887),
-      8: const Color(0xFFD2691E), 16: const Color(0xFFCC5500),
-      32: const Color(0xFFB8450E), 64: const Color(0xFF8B2500),
-      128: const Color(0xFFCD853F), 256: const Color(0xFFDAA520),
-      512: const Color(0xFFB8860B), 1024: const Color(0xFF8B6914),
+      2: const Color(0xFFF5DEB3),
+      4: const Color(0xFFDEB887),
+      8: const Color(0xFFD2691E),
+      16: const Color(0xFFCC5500),
+      32: const Color(0xFFB8450E),
+      64: const Color(0xFF8B2500),
+      128: const Color(0xFFCD853F),
+      256: const Color(0xFFDAA520),
+      512: const Color(0xFFB8860B),
+      1024: const Color(0xFF8B6914),
       2048: const Color(0xFFFF8C00),
     },
   ),
@@ -74,11 +84,16 @@ final _themes = [
     lowTextColor: const Color(0xFF4A6B8A),
     highTextColor: Colors.white,
     tileColors: {
-      2: const Color(0xFFE8F4F8), 4: const Color(0xFFD0E8F0),
-      8: const Color(0xFF87CEEB), 16: const Color(0xFF5BA3CF),
-      32: const Color(0xFF4682B4), 64: const Color(0xFF2E6DA0),
-      128: const Color(0xFFB0C4DE), 256: const Color(0xFF8AADCC),
-      512: const Color(0xFF6495ED), 1024: const Color(0xFF4169E1),
+      2: const Color(0xFFE8F4F8),
+      4: const Color(0xFFD0E8F0),
+      8: const Color(0xFF87CEEB),
+      16: const Color(0xFF5BA3CF),
+      32: const Color(0xFF4682B4),
+      64: const Color(0xFF2E6DA0),
+      128: const Color(0xFFB0C4DE),
+      256: const Color(0xFF8AADCC),
+      512: const Color(0xFF6495ED),
+      1024: const Color(0xFF4169E1),
       2048: const Color(0xFF00BFFF),
     },
   ),
@@ -92,11 +107,16 @@ final _themes = [
     lowTextColor: const Color(0xFF3D6B3D),
     highTextColor: Colors.white,
     tileColors: {
-      2: const Color(0xFFE8F5E9), 4: const Color(0xFFC8E6C9),
-      8: const Color(0xFF81C784), 16: const Color(0xFFFF9EB5),
-      32: const Color(0xFFFF6F91), 64: const Color(0xFFE84580),
-      128: const Color(0xFFFFEB3B), 256: const Color(0xFFFF9800),
-      512: const Color(0xFF66BB6A), 1024: const Color(0xFF43A047),
+      2: const Color(0xFFE8F5E9),
+      4: const Color(0xFFC8E6C9),
+      8: const Color(0xFF81C784),
+      16: const Color(0xFFFF9EB5),
+      32: const Color(0xFFFF6F91),
+      64: const Color(0xFFE84580),
+      128: const Color(0xFFFFEB3B),
+      256: const Color(0xFFFF9800),
+      512: const Color(0xFF66BB6A),
+      1024: const Color(0xFF43A047),
       2048: const Color(0xFFE91E63),
     },
   ),
@@ -110,11 +130,16 @@ final _themes = [
     lowTextColor: const Color(0xFF5C2020),
     highTextColor: const Color(0xFFFFF8E7),
     tileColors: {
-      2: const Color(0xFFF5E6E6), 4: const Color(0xFFE8C8C8),
-      8: const Color(0xFFC62828), 16: const Color(0xFFAD1616),
-      32: const Color(0xFF2E7D32), 64: const Color(0xFF1B5E20),
-      128: const Color(0xFFFFD700), 256: const Color(0xFFFFC107),
-      512: const Color(0xFFB71C1C), 1024: const Color(0xFF1B5E20),
+      2: const Color(0xFFF5E6E6),
+      4: const Color(0xFFE8C8C8),
+      8: const Color(0xFFC62828),
+      16: const Color(0xFFAD1616),
+      32: const Color(0xFF2E7D32),
+      64: const Color(0xFF1B5E20),
+      128: const Color(0xFFFFD700),
+      256: const Color(0xFFFFC107),
+      512: const Color(0xFFB71C1C),
+      1024: const Color(0xFF1B5E20),
       2048: const Color(0xFFFFD700),
     },
   ),
@@ -128,11 +153,16 @@ final _themes = [
     lowTextColor: const Color(0xFF6B3D6B),
     highTextColor: const Color(0xFFFFF8E7),
     tileColors: {
-      2: const Color(0xFFE8D5F0), 4: const Color(0xFFD4A8E0),
-      8: const Color(0xFFFF8C00), 16: const Color(0xFFFF6600),
-      32: const Color(0xFF8B008B), 64: const Color(0xFF6A0DAD),
-      128: const Color(0xFFFF4500), 256: const Color(0xFFCC3700),
-      512: const Color(0xFF4B0082), 1024: const Color(0xFF2E0854),
+      2: const Color(0xFFE8D5F0),
+      4: const Color(0xFFD4A8E0),
+      8: const Color(0xFFFF8C00),
+      16: const Color(0xFFFF6600),
+      32: const Color(0xFF8B008B),
+      64: const Color(0xFF6A0DAD),
+      128: const Color(0xFFFF4500),
+      256: const Color(0xFFCC3700),
+      512: const Color(0xFF4B0082),
+      1024: const Color(0xFF2E0854),
       2048: const Color(0xFFFF6600),
     },
   ),
@@ -169,6 +199,7 @@ class _Game2048ScreenState extends State<Game2048Screen>
 
   Future<void> _loadBestScore() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() => _bestScore = prefs.getInt('best_score_2048') ?? 0);
   }
 
@@ -253,7 +284,10 @@ class _Game2048ScreenState extends State<Game2048Screen>
 
     if (moved) {
       _addRandomTile();
-      if (_score > _bestScore) { _bestScore = _score; _saveBestScore(); }
+      if (_score > _bestScore) {
+        _bestScore = _score;
+        _saveBestScore();
+      }
       _checkGameOver();
     }
 
@@ -272,7 +306,11 @@ class _Game2048ScreenState extends State<Game2048Screen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       HighScoreDialog.submitIfQualifies(
-        context: context, gameId: '2048', gameName: '2048', score: _score);
+        context: context,
+        gameId: '2048',
+        gameName: '2048',
+        score: _score,
+      );
     });
   }
 
@@ -311,26 +349,31 @@ class _Game2048ScreenState extends State<Game2048Screen>
 
   @override
   Widget build(BuildContext context) {
-    final screenW = MediaQuery.of(context).size.width;
-    final gridW = min(screenW - 40, 480.0);
-    final tileSize = (gridW - 5 * 8) / 4;
-
     return Scaffold(
       backgroundColor: GameTheme.background,
       appBar: AppBar(
         title: const Text('2048'),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded, color: GameTheme.textPrimary),
+          icon: const Icon(
+            Icons.arrow_back_ios_rounded,
+            color: GameTheme.textPrimary,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.help_outline_rounded, color: GameTheme.accent),
+            icon: const Icon(
+              Icons.help_outline_rounded,
+              color: GameTheme.accent,
+            ),
             onPressed: () => GameHelp.show(context, '2048'),
           ),
           // Theme switcher
           IconButton(
-            icon: const Icon(Icons.palette_outlined, color: GameTheme.textSecondary),
+            icon: const Icon(
+              Icons.palette_outlined,
+              color: GameTheme.textSecondary,
+            ),
             onPressed: () => _showThemePicker(),
             tooltip: 'Change theme',
           ),
@@ -340,132 +383,155 @@ class _Game2048ScreenState extends State<Game2048Screen>
           ),
         ],
       ),
-      body: SafeArea(child: Column(
-        children: [
-          const SizedBox(height: 10),
-
-          // Score bar
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              children: [
-                _ScoreBox(label: 'SCORE', value: _score),
-                const SizedBox(width: 12),
-                _ScoreBox(label: 'BEST', value: _bestScore),
-              ],
-            ),
-          ),
-
-          // Theme indicator
-          Padding(
-            padding: const EdgeInsets.only(top: 10),
-            child: Text(
-              '${_theme.emoji} ${_theme.name}',
-              style: const TextStyle(fontSize: 13, color: GameTheme.textSecondary),
-            ),
-          ),
-
-          const Spacer(),
-
-          // Game grid
-          GestureDetector(
-            onPanStart: _onPanStart,
-            onPanUpdate: _onPanUpdate,
-            onPanEnd: _onPanEnd,
-            child: Container(
-              width: gridW,
-              height: gridW,
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: _theme.gridBg,
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.4),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Stack(
-                children: [
-                  // Empty cell backgrounds
-                  for (int r = 0; r < gridSize; r++)
-                    for (int c = 0; c < gridSize; c++)
-                      Positioned(
-                        left: c * (tileSize + 8),
-                        top: r * (tileSize + 8),
-                        child: Container(
-                          width: tileSize,
-                          height: tileSize,
-                          decoration: BoxDecoration(
-                            color: _theme.cellBg,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final compact = constraints.maxWidth > constraints.maxHeight;
+            if (compact) {
+              final gridWidth = min(
+                constraints.maxHeight - 24,
+                constraints.maxWidth * 0.52,
+              );
+              return Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 320),
+                        child: _buildGameInfo(),
                       ),
+                    ),
+                    const SizedBox(width: 24),
+                    _buildGrid(gridWidth),
+                  ],
+                ),
+              );
+            }
 
-                  // Tiles
-                  for (int r = 0; r < gridSize; r++)
-                    for (int c = 0; c < gridSize; c++)
-                      if (_grid[r][c] != 0)
-                        AnimatedPositioned(
-                          duration: const Duration(milliseconds: 120),
-                          curve: Curves.easeOutCubic,
-                          left: c * (tileSize + 8),
-                          top: r * (tileSize + 8),
-                          child: _buildTile(_grid[r][c], tileSize),
-                        ),
-                ],
-              ),
+            final gridWidth = min(constraints.maxWidth - 40, 480.0);
+            return Column(
+              children: [
+                const SizedBox(height: 10),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: _buildScoreRow(),
+                ),
+                const Spacer(),
+                _buildGrid(gridWidth),
+                const SizedBox(height: 20),
+                _buildHint(),
+                const Spacer(),
+                if (_gameOver || _won)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 24),
+                    child: _buildResult(),
+                  ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGameInfo() => Column(
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: [
+      _buildScoreRow(),
+      const SizedBox(height: 14),
+      Text(
+        '${_theme.emoji} ${_theme.name}',
+        style: const TextStyle(fontSize: 13, color: GameTheme.textSecondary),
+      ),
+      const SizedBox(height: 12),
+      _buildHint(),
+      if (_gameOver || _won) ...[const SizedBox(height: 16), _buildResult()],
+    ],
+  );
+
+  Widget _buildScoreRow() => Row(
+    children: [
+      _ScoreBox(label: 'SCORE', value: _score),
+      const SizedBox(width: 12),
+      _ScoreBox(label: 'BEST', value: _bestScore),
+    ],
+  );
+
+  Widget _buildHint() => Text(
+    'Swipe to move tiles',
+    style: TextStyle(
+      color: GameTheme.textSecondary.withValues(alpha: 0.65),
+      fontSize: 13,
+    ),
+  );
+
+  Widget _buildResult() => Column(
+    children: [
+      Text(
+        _won ? 'You Win!' : 'Game Over',
+        style: TextStyle(
+          fontSize: 28,
+          fontWeight: FontWeight.w800,
+          color: _won ? GameTheme.gold : GameTheme.accentAlt,
+        ),
+      ),
+      const SizedBox(height: 10),
+      ElevatedButton(onPressed: _startNewGame, child: const Text('Play Again')),
+    ],
+  );
+
+  Widget _buildGrid(double gridWidth) {
+    final tileSize = (gridWidth - 5 * 8) / 4;
+    return GestureDetector(
+      onPanStart: _onPanStart,
+      onPanUpdate: _onPanUpdate,
+      onPanEnd: _onPanEnd,
+      child: Container(
+        width: gridWidth,
+        height: gridWidth,
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: _theme.gridBg,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.4),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
             ),
-          ),
-
-          const SizedBox(height: 20),
-
-          Text(
-            'Swipe to move tiles',
-            style: TextStyle(
-              color: GameTheme.textSecondary.withValues(alpha: 0.5),
-              fontSize: 13,
-            ),
-          ),
-
-          const Spacer(),
-
-          // Game over / won
-          if (_gameOver || _won)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 40),
-              child: Column(
-                children: [
-                  Text(
-                    _won ? 'You Win!' : 'Game Over',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w800,
-                      color: _won ? GameTheme.gold : GameTheme.accentAlt,
+          ],
+        ),
+        child: Stack(
+          children: [
+            for (int r = 0; r < gridSize; r++)
+              for (int c = 0; c < gridSize; c++)
+                Positioned(
+                  left: c * (tileSize + 8),
+                  top: r * (tileSize + 8),
+                  child: Container(
+                    width: tileSize,
+                    height: tileSize,
+                    decoration: BoxDecoration(
+                      color: _theme.cellBg,
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text('Score: $_score',
-                      style: const TextStyle(color: GameTheme.textSecondary, fontSize: 16)),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: _startNewGame,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: GameTheme.accent,
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: const Text('Play Again',
-                        style: TextStyle(fontWeight: FontWeight.w700, color: Colors.white)),
+                ),
+            for (int r = 0; r < gridSize; r++)
+              for (int c = 0; c < gridSize; c++)
+                if (_grid[r][c] != 0)
+                  AnimatedPositioned(
+                    duration: const Duration(milliseconds: 120),
+                    curve: Curves.easeOutCubic,
+                    left: c * (tileSize + 8),
+                    top: r * (tileSize + 8),
+                    child: _buildTile(_grid[r][c], tileSize),
                   ),
-                ],
-              ),
-            ),
-        ],
-      )),
+          ],
+        ),
+      ),
     );
   }
 
@@ -488,7 +554,11 @@ class _Game2048ScreenState extends State<Game2048Screen>
             child: Text(
               '$value',
               style: TextStyle(
-                fontSize: value < 100 ? 32 : value < 1000 ? 26 : 20,
+                fontSize: value < 100
+                    ? 32
+                    : value < 1000
+                    ? 26
+                    : 20,
                 fontWeight: FontWeight.w800,
                 color: value <= 4 ? _theme.lowTextColor : _theme.highTextColor,
               ),
@@ -511,13 +581,23 @@ class _Game2048ScreenState extends State<Game2048Screen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(width: 40, height: 4,
-                decoration: BoxDecoration(color: GameTheme.border,
-                    borderRadius: BorderRadius.circular(2))),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: GameTheme.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
             const SizedBox(height: 16),
-            const Text('Choose Theme',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700,
-                    color: GameTheme.textPrimary)),
+            const Text(
+              'Choose Theme',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: GameTheme.textPrimary,
+              ),
+            ),
             const SizedBox(height: 16),
             Wrap(
               spacing: 10,
@@ -543,7 +623,9 @@ class _Game2048ScreenState extends State<Game2048Screen>
         width: 100,
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: selected ? GameTheme.accent.withValues(alpha: 0.15) : GameTheme.background,
+          color: selected
+              ? GameTheme.accent.withValues(alpha: 0.15)
+              : GameTheme.background,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: selected ? GameTheme.accent : GameTheme.border,
@@ -554,22 +636,31 @@ class _Game2048ScreenState extends State<Game2048Screen>
           children: [
             Text(t.emoji, style: const TextStyle(fontSize: 28)),
             const SizedBox(height: 6),
-            Text(t.name,
-                style: TextStyle(
-                  fontSize: 12, fontWeight: FontWeight.w600,
-                  color: selected ? GameTheme.accent : GameTheme.textSecondary,
-                )),
+            Text(
+              t.name,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: selected ? GameTheme.accent : GameTheme.textSecondary,
+              ),
+            ),
             const SizedBox(height: 6),
             // Mini color preview
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: [2, 8, 32, 128].map((v) => Container(
-                width: 14, height: 14, margin: const EdgeInsets.symmetric(horizontal: 1),
-                decoration: BoxDecoration(
-                  color: t.tileColors[v],
-                  borderRadius: BorderRadius.circular(3),
-                ),
-              )).toList(),
+              children: [2, 8, 32, 128]
+                  .map(
+                    (v) => Container(
+                      width: 14,
+                      height: 14,
+                      margin: const EdgeInsets.symmetric(horizontal: 1),
+                      decoration: BoxDecoration(
+                        color: t.tileColors[v],
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                  )
+                  .toList(),
             ),
           ],
         ),
@@ -595,12 +686,24 @@ class _ScoreBox extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Text(label, style: const TextStyle(
-              fontSize: 11, fontWeight: FontWeight.w600,
-              color: GameTheme.textSecondary, letterSpacing: 1.5)),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: GameTheme.textSecondary,
+                letterSpacing: 1.5,
+              ),
+            ),
             const SizedBox(height: 4),
-            Text('$value', style: const TextStyle(
-              fontSize: 24, fontWeight: FontWeight.w800, color: GameTheme.textPrimary)),
+            Text(
+              '$value',
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w800,
+                color: GameTheme.textPrimary,
+              ),
+            ),
           ],
         ),
       ),

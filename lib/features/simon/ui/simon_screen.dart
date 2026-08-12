@@ -14,8 +14,18 @@ class SimonScreen extends StatefulWidget {
 }
 
 class _SimonScreenState extends State<SimonScreen> {
-  static const _colors = [Color(0xFFE53935), Color(0xFF1E88E5), Color(0xFF43A047), Color(0xFFFDD835)];
-  static const _litColors = [Color(0xFFFF5252), Color(0xFF448AFF), Color(0xFF69F0AE), Color(0xFFFFFF00)];
+  static const _colors = [
+    Color(0xFFE53935),
+    Color(0xFF1E88E5),
+    Color(0xFF43A047),
+    Color(0xFFFDD835),
+  ];
+  static const _litColors = [
+    Color(0xFFFF5252),
+    Color(0xFF448AFF),
+    Color(0xFF69F0AE),
+    Color(0xFFFFFF00),
+  ];
 
   List<int> _sequence = [];
   int _playerIndex = 0;
@@ -35,6 +45,7 @@ class _SimonScreenState extends State<SimonScreen> {
 
   Future<void> _loadBestScore() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() => _bestScore = prefs.getInt('best_score_simon') ?? 0);
   }
 
@@ -44,8 +55,11 @@ class _SimonScreenState extends State<SimonScreen> {
   }
 
   void _startGame() {
-    _sequence = []; _round = 0; _gameOver = false;
-    _playing = true; _playerIndex = 0;
+    _sequence = [];
+    _round = 0;
+    _gameOver = false;
+    _playing = true;
+    _playerIndex = 0;
     setState(() {});
     _nextRound();
   }
@@ -58,28 +72,39 @@ class _SimonScreenState extends State<SimonScreen> {
   }
 
   Future<void> _showSequence() async {
-    _showingSequence = true; setState(() {});
+    _showingSequence = true;
+    setState(() {});
     await Future.delayed(const Duration(milliseconds: 400));
+    if (!mounted || !_playing) return;
 
     final delay = max(250, 600 - _round * 20);
     for (final idx in _sequence) {
       if (!mounted) return;
-      _litButton = idx; setState(() {});
+      _litButton = idx;
+      setState(() {});
       HapticFeedback.selectionClick();
       await Future.delayed(Duration(milliseconds: delay));
-      _litButton = -1; setState(() {});
+      if (!mounted || !_playing) return;
+      _litButton = -1;
+      setState(() {});
       await Future.delayed(Duration(milliseconds: delay ~/ 2));
+      if (!mounted || !_playing) return;
     }
-    _showingSequence = false; setState(() {});
+    _showingSequence = false;
+    setState(() {});
   }
 
   void _onButtonTap(int index) {
     if (!_playing || _showingSequence || _gameOver) return;
 
-    _litButton = index; setState(() {});
+    _litButton = index;
+    setState(() {});
     HapticFeedback.lightImpact();
     Future.delayed(const Duration(milliseconds: 150), () {
-      if (mounted) { _litButton = -1; setState(() {}); }
+      if (mounted) {
+        _litButton = -1;
+        setState(() {});
+      }
     });
 
     if (_sequence[_playerIndex] == index) {
@@ -92,16 +117,24 @@ class _SimonScreenState extends State<SimonScreen> {
       }
     } else {
       // Wrong!
-      _gameOver = true; _playing = false;
+      _gameOver = true;
+      _playing = false;
       final finalScore = _round - 1;
-      if (finalScore > _bestScore) { _bestScore = finalScore; _saveBestScore(); }
+      if (finalScore > _bestScore) {
+        _bestScore = finalScore;
+        _saveBestScore();
+      }
       HapticFeedback.heavyImpact();
       setState(() {});
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         HighScoreDialog.submitIfQualifies(
-          context: context, gameId: 'simon', gameName: 'Simon Says',
-          score: finalScore, scoreLabel: 'Level');
+          context: context,
+          gameId: 'simon',
+          gameName: 'Color Recall',
+          score: finalScore,
+          scoreLabel: 'Level',
+        );
       });
     }
   }
@@ -110,67 +143,158 @@ class _SimonScreenState extends State<SimonScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: GameTheme.background,
-      appBar: AppBar(title: const Text('Simon Says'), leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_rounded, color: GameTheme.textPrimary),
-        onPressed: () => Navigator.pop(context)),
+      appBar: AppBar(
+        title: const Text('Color Recall'),
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_rounded,
+            color: GameTheme.textPrimary,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.help_outline_rounded, color: GameTheme.accent),
-            onPressed: () => GameHelp.show(context, 'Simon Says'),
+            icon: const Icon(
+              Icons.help_outline_rounded,
+              color: GameTheme.accent,
+            ),
+            onPressed: () => GameHelp.show(context, 'Color Recall'),
           ),
-        ]),
-      body: SafeArea(child: LayoutBuilder(builder: (context, constraints) {
-        final padSize = min(constraints.maxWidth - 48, constraints.maxHeight * 0.5);
+        ],
+      ),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final padSize = min(
+              constraints.maxWidth - 48,
+              constraints.maxHeight * 0.5,
+            );
 
-        return Column(children: [
-          const SizedBox(height: 16),
-          // Score
-          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            _statBox('Round', _playing || _gameOver ? '${_round > 0 ? (_gameOver ? _round - 1 : _round) : 0}' : '-'),
-            const SizedBox(width: 16),
-            _statBox('Best', '$_bestScore'),
-          ]),
+            return Column(
+              children: [
+                const SizedBox(height: 16),
+                // Score
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _statBox(
+                      'Round',
+                      _playing || _gameOver
+                          ? '${_round > 0 ? (_gameOver ? _round - 1 : _round) : 0}'
+                          : '-',
+                    ),
+                    const SizedBox(width: 16),
+                    _statBox('Best', '$_bestScore'),
+                  ],
+                ),
 
-          const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-          // Status
-          Text(_gameOver ? 'Wrong! Score: ${_round - 1}'
-            : _showingSequence ? 'Watch...'
-            : _playing ? 'Your turn' : 'Press Start',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700,
-              color: _gameOver ? GameTheme.accentAlt : GameTheme.accent)),
+                // Status
+                Text(
+                  _gameOver
+                      ? 'Wrong! Score: ${_round - 1}'
+                      : _showingSequence
+                      ? 'Watch...'
+                      : _playing
+                      ? 'Your turn'
+                      : 'Press Start',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: _gameOver ? GameTheme.accentAlt : GameTheme.accent,
+                  ),
+                ),
 
-          const Spacer(),
+                const Spacer(),
 
-          // Simon pad
-          Center(child: SizedBox(width: padSize, height: padSize,
-            child: ClipRRect(borderRadius: BorderRadius.circular(padSize / 2),
-              child: GridView.count(crossAxisCount: 2, physics: const NeverScrollableScrollPhysics(),
-                children: List.generate(4, (i) => _simonButton(i, padSize / 2)))))),
+                // Simon pad
+                Center(
+                  child: SizedBox(
+                    width: padSize,
+                    height: padSize,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(padSize / 2),
+                      child: GridView.count(
+                        crossAxisCount: 2,
+                        physics: const NeverScrollableScrollPhysics(),
+                        children: List.generate(
+                          4,
+                          (i) => _simonButton(i, padSize / 2),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
 
-          const Spacer(),
+                const Spacer(),
 
-          // Start/Play Again
-          Padding(padding: const EdgeInsets.only(bottom: 32),
-            child: ElevatedButton(
-              onPressed: (_playing && !_gameOver) ? null : _startGame,
-              style: ElevatedButton.styleFrom(backgroundColor: GameTheme.accent,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-              child: Text(_gameOver ? 'Play Again' : _playing ? 'Playing...' : 'Start Game',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)))),
-        ]);
-      })),
+                // Start/Play Again
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 32),
+                  child: ElevatedButton(
+                    onPressed: (_playing && !_gameOver) ? null : _startGame,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: GameTheme.accent,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 14,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: Text(
+                      _gameOver
+                          ? 'Play Again'
+                          : _playing
+                          ? 'Playing...'
+                          : 'Start Game',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
 
   Widget _statBox(String label, String value) {
-    return Container(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      decoration: BoxDecoration(color: GameTheme.surface, borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: GameTheme.border)),
-      child: Column(children: [
-        Text(label, style: const TextStyle(fontSize: 11, color: GameTheme.textSecondary, fontWeight: FontWeight.w600)),
-        Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: GameTheme.textPrimary))]));
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      decoration: BoxDecoration(
+        color: GameTheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: GameTheme.border),
+      ),
+      child: Column(
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              color: GameTheme.textSecondary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: GameTheme.textPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _simonButton(int index, double size) {
@@ -191,7 +315,19 @@ class _SimonScreenState extends State<SimonScreen> {
         duration: const Duration(milliseconds: 100),
         margin: const EdgeInsets.all(3),
         decoration: BoxDecoration(
-          color: color, borderRadius: radius,
-          boxShadow: isLit ? [BoxShadow(color: color.withValues(alpha: 0.7), blurRadius: 20, spreadRadius: 2)] : null)));
+          color: color,
+          borderRadius: radius,
+          boxShadow: isLit
+              ? [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.7),
+                    blurRadius: 20,
+                    spreadRadius: 2,
+                  ),
+                ]
+              : null,
+        ),
+      ),
+    );
   }
 }

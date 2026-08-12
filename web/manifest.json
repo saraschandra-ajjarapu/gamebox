@@ -1,6 +1,6 @@
 {
-    "name": "gamebox",
-    "short_name": "gamebox",
+    "name": "Quirkade",
+    "short_name": "Quirkade",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

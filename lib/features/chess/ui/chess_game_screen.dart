@@ -20,15 +20,19 @@ int _depthForRating(int rating) {
 
 // Standard ELO update. score: 1=win, 0.5=draw, 0=loss.
 int _eloChange(int playerRating, int opponentRating, double score) {
-  final expected = 1.0 / (1.0 + math.pow(10, (opponentRating - playerRating) / 400.0));
+  final expected =
+      1.0 / (1.0 + math.pow(10, (opponentRating - playerRating) / 400.0));
   return (32 * (score - expected)).round();
 }
 
 // ── Data types ────────────────────────────────────────────────────────────
 
 enum PieceType { king, queen, rook, bishop, knight, pawn }
+
 enum PieceColor { white, black }
+
 enum GameMode { menu, playing }
+
 enum PlayerMode { onePlayer, twoPlayer }
 
 class ChessPiece {
@@ -41,35 +45,50 @@ class ChessPiece {
   // Use outlined symbols for white, filled for black
   String get symbol {
     const white = {
-      PieceType.king: '\u2654', PieceType.queen: '\u2655',
-      PieceType.rook: '\u2656', PieceType.bishop: '\u2657',
-      PieceType.knight: '\u2658', PieceType.pawn: '\u2659',
+      PieceType.king: '\u2654',
+      PieceType.queen: '\u2655',
+      PieceType.rook: '\u2656',
+      PieceType.bishop: '\u2657',
+      PieceType.knight: '\u2658',
+      PieceType.pawn: '\u2659',
     };
     const black = {
-      PieceType.king: '\u265A', PieceType.queen: '\u265B',
-      PieceType.rook: '\u265C', PieceType.bishop: '\u265D',
-      PieceType.knight: '\u265E', PieceType.pawn: '\u265F',
+      PieceType.king: '\u265A',
+      PieceType.queen: '\u265B',
+      PieceType.rook: '\u265C',
+      PieceType.bishop: '\u265D',
+      PieceType.knight: '\u265E',
+      PieceType.pawn: '\u265F',
     };
     return color == PieceColor.white ? white[type]! : black[type]!;
   }
 
   String get letter {
     const letters = {
-      PieceType.king: 'K', PieceType.queen: 'Q',
-      PieceType.rook: 'R', PieceType.bishop: 'B',
-      PieceType.knight: 'N', PieceType.pawn: '',
+      PieceType.king: 'K',
+      PieceType.queen: 'Q',
+      PieceType.rook: 'R',
+      PieceType.bishop: 'B',
+      PieceType.knight: 'N',
+      PieceType.pawn: '',
     };
     return letters[type]!;
   }
 
   int get value {
     switch (type) {
-      case PieceType.pawn: return 100;
-      case PieceType.knight: return 320;
-      case PieceType.bishop: return 330;
-      case PieceType.rook: return 500;
-      case PieceType.queen: return 900;
-      case PieceType.king: return 20000;
+      case PieceType.pawn:
+        return 100;
+      case PieceType.knight:
+        return 320;
+      case PieceType.bishop:
+        return 330;
+      case PieceType.rook:
+        return 500;
+      case PieceType.queen:
+        return 900;
+      case PieceType.king:
+        return 20000;
     }
   }
 
@@ -206,6 +225,7 @@ class _ChessGameScreenState extends State<ChessGameScreen>
   int _pieceStyle = 0; // 0=Classic, 1=Outlined, 2=Minimal, ...
   int _aiDifficulty = 1; // 0=Easy, 1=Medium, 2=Hard
   bool _aiThinking = false;
+  int _gameGeneration = 0;
 
   // Rating system
   int _playerRating = 400;
@@ -268,6 +288,7 @@ class _ChessGameScreenState extends State<ChessGameScreen>
   }
 
   void _initBoard() {
+    _gameGeneration++;
     _board = List.generate(8, (_) => List.filled(8, null));
     _turn = PieceColor.white;
     _selected = null;
@@ -282,9 +303,14 @@ class _ChessGameScreenState extends State<ChessGameScreen>
     _checkmateAnimCtrl = null;
 
     final backRow = [
-      PieceType.rook, PieceType.knight, PieceType.bishop,
-      PieceType.queen, PieceType.king, PieceType.bishop,
-      PieceType.knight, PieceType.rook,
+      PieceType.rook,
+      PieceType.knight,
+      PieceType.bishop,
+      PieceType.queen,
+      PieceType.king,
+      PieceType.bishop,
+      PieceType.knight,
+      PieceType.rook,
     ];
 
     for (int c = 0; c < 8; c++) {
@@ -309,7 +335,8 @@ class _ChessGameScreenState extends State<ChessGameScreen>
     setState(() {});
 
     // If AI plays white, make AI move first
-    if (_playerMode == PlayerMode.onePlayer && _humanColor == PieceColor.black) {
+    if (_playerMode == PlayerMode.onePlayer &&
+        _humanColor == PieceColor.black) {
       _scheduleAiMove();
     }
   }
@@ -331,7 +358,13 @@ class _ChessGameScreenState extends State<ChessGameScreen>
       if (_validMoves.contains((r, c))) {
         // Send move to opponent over WiFi
         if (_isWifiGame && _wifiService != null) {
-          _wifiService!.send({'type': 'move', 'fr': _selected!.$1, 'fc': _selected!.$2, 'tr': r, 'tc': c});
+          _wifiService!.send({
+            'type': 'move',
+            'fr': _selected!.$1,
+            'fc': _selected!.$2,
+            'tr': r,
+            'tc': c,
+          });
         }
         _makeMove(_selected!.$1, _selected!.$2, r, c);
         return;
@@ -369,7 +402,11 @@ class _ChessGameScreenState extends State<ChessGameScreen>
     // En passant capture
     if (piece.type == PieceType.pawn && _enPassantTarget == (toR, toC)) {
       final captureR = piece.color == PieceColor.white ? toR + 1 : toR - 1;
-      _triggerCaptureAnim(captureR, toC, _board[captureR][toC]?.color ?? PieceColor.black);
+      _triggerCaptureAnim(
+        captureR,
+        toC,
+        _board[captureR][toC]?.color ?? PieceColor.black,
+      );
       _board[captureR][toC] = null;
     }
 
@@ -401,7 +438,11 @@ class _ChessGameScreenState extends State<ChessGameScreen>
     if (piece.type == PieceType.pawn) {
       if ((piece.color == PieceColor.white && toR == 0) ||
           (piece.color == PieceColor.black && toR == 7)) {
-        _board[toR][toC] = ChessPiece(PieceType.queen, piece.color, hasMoved: true);
+        _board[toR][toC] = ChessPiece(
+          PieceType.queen,
+          piece.color,
+          hasMoved: true,
+        );
       }
     }
 
@@ -422,8 +463,11 @@ class _ChessGameScreenState extends State<ChessGameScreen>
       if (!hasLegal) {
         _gameOver = true;
         if (inCheck) {
-          final winner = _turn == PieceColor.white ? PieceColor.black : PieceColor.white;
-          _status = '${winner == PieceColor.white ? "White" : "Black"} wins by checkmate!';
+          final winner = _turn == PieceColor.white
+              ? PieceColor.black
+              : PieceColor.white;
+          _status =
+              '${winner == PieceColor.white ? "White" : "Black"} wins by checkmate!';
           _applyRatingResult(winner == _humanColor ? 1.0 : 0.0);
           _triggerCheckmateOverlay();
         } else {
@@ -455,12 +499,18 @@ class _ChessGameScreenState extends State<ChessGameScreen>
   // ── AI ──────────────────────────────────────────────────────────────────
 
   void _scheduleAiMove() {
+    final generation = _gameGeneration;
     _aiThinking = true;
     setState(() {});
 
     final delay = _aiDifficulty == 2 ? 100 : 400;
     Future.delayed(Duration(milliseconds: delay), () {
-      if (!mounted || _gameOver) return;
+      if (!mounted ||
+          generation != _gameGeneration ||
+          _gameOver ||
+          _mode != GameMode.playing) {
+        return;
+      }
       try {
         final move = _findBestMove();
         if (move != null) {
@@ -477,86 +527,422 @@ class _ChessGameScreenState extends State<ChessGameScreen>
         }
       }
       _aiThinking = false;
-      if (mounted) setState(() {});
+      if (mounted && generation == _gameGeneration) setState(() {});
     });
   }
 
   // ── Piece-square tables (from white's perspective, row 0 = rank 8) ─────
 
   static const _pawnTable = [
-     0,  0,  0,  0,  0,  0,  0,  0,
-    50, 50, 50, 50, 50, 50, 50, 50,
-    10, 10, 20, 30, 30, 20, 10, 10,
-     5,  5, 10, 25, 25, 10,  5,  5,
-     0,  0,  0, 20, 20,  0,  0,  0,
-     5, -5,-10,  0,  0,-10, -5,  5,
-     5, 10, 10,-20,-20, 10, 10,  5,
-     0,  0,  0,  0,  0,  0,  0,  0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    50,
+    50,
+    50,
+    50,
+    50,
+    50,
+    50,
+    50,
+    10,
+    10,
+    20,
+    30,
+    30,
+    20,
+    10,
+    10,
+    5,
+    5,
+    10,
+    25,
+    25,
+    10,
+    5,
+    5,
+    0,
+    0,
+    0,
+    20,
+    20,
+    0,
+    0,
+    0,
+    5,
+    -5,
+    -10,
+    0,
+    0,
+    -10,
+    -5,
+    5,
+    5,
+    10,
+    10,
+    -20,
+    -20,
+    10,
+    10,
+    5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
   ];
 
   static const _knightTable = [
-    -50,-40,-30,-30,-30,-30,-40,-50,
-    -40,-20,  0,  0,  0,  0,-20,-40,
-    -30,  0, 10, 15, 15, 10,  0,-30,
-    -30,  5, 15, 20, 20, 15,  5,-30,
-    -30,  0, 15, 20, 20, 15,  0,-30,
-    -30,  5, 10, 15, 15, 10,  5,-30,
-    -40,-20,  0,  5,  5,  0,-20,-40,
-    -50,-40,-30,-30,-30,-30,-40,-50,
+    -50,
+    -40,
+    -30,
+    -30,
+    -30,
+    -30,
+    -40,
+    -50,
+    -40,
+    -20,
+    0,
+    0,
+    0,
+    0,
+    -20,
+    -40,
+    -30,
+    0,
+    10,
+    15,
+    15,
+    10,
+    0,
+    -30,
+    -30,
+    5,
+    15,
+    20,
+    20,
+    15,
+    5,
+    -30,
+    -30,
+    0,
+    15,
+    20,
+    20,
+    15,
+    0,
+    -30,
+    -30,
+    5,
+    10,
+    15,
+    15,
+    10,
+    5,
+    -30,
+    -40,
+    -20,
+    0,
+    5,
+    5,
+    0,
+    -20,
+    -40,
+    -50,
+    -40,
+    -30,
+    -30,
+    -30,
+    -30,
+    -40,
+    -50,
   ];
 
   static const _bishopTable = [
-    -20,-10,-10,-10,-10,-10,-10,-20,
-    -10,  0,  0,  0,  0,  0,  0,-10,
-    -10,  0, 10, 10, 10, 10,  0,-10,
-    -10,  5,  5, 10, 10,  5,  5,-10,
-    -10,  0, 10, 10, 10, 10,  0,-10,
-    -10, 10, 10, 10, 10, 10, 10,-10,
-    -10,  5,  0,  0,  0,  0,  5,-10,
-    -20,-10,-10,-10,-10,-10,-10,-20,
+    -20,
+    -10,
+    -10,
+    -10,
+    -10,
+    -10,
+    -10,
+    -20,
+    -10,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    -10,
+    -10,
+    0,
+    10,
+    10,
+    10,
+    10,
+    0,
+    -10,
+    -10,
+    5,
+    5,
+    10,
+    10,
+    5,
+    5,
+    -10,
+    -10,
+    0,
+    10,
+    10,
+    10,
+    10,
+    0,
+    -10,
+    -10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    -10,
+    -10,
+    5,
+    0,
+    0,
+    0,
+    0,
+    5,
+    -10,
+    -20,
+    -10,
+    -10,
+    -10,
+    -10,
+    -10,
+    -10,
+    -20,
   ];
 
   static const _rookTable = [
-     0,  0,  0,  0,  0,  0,  0,  0,
-     5, 10, 10, 10, 10, 10, 10,  5,
-    -5,  0,  0,  0,  0,  0,  0, -5,
-    -5,  0,  0,  0,  0,  0,  0, -5,
-    -5,  0,  0,  0,  0,  0,  0, -5,
-    -5,  0,  0,  0,  0,  0,  0, -5,
-    -5,  0,  0,  0,  0,  0,  0, -5,
-     0,  0,  0,  5,  5,  0,  0,  0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    5,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    5,
+    -5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    -5,
+    -5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    -5,
+    -5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    -5,
+    -5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    -5,
+    -5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    -5,
+    0,
+    0,
+    0,
+    5,
+    5,
+    0,
+    0,
+    0,
   ];
 
   static const _queenTable = [
-    -20,-10,-10, -5, -5,-10,-10,-20,
-    -10,  0,  0,  0,  0,  0,  0,-10,
-    -10,  0,  5,  5,  5,  5,  0,-10,
-     -5,  0,  5,  5,  5,  5,  0, -5,
-      0,  0,  5,  5,  5,  5,  0, -5,
-    -10,  5,  5,  5,  5,  5,  0,-10,
-    -10,  0,  5,  0,  0,  0,  0,-10,
-    -20,-10,-10, -5, -5,-10,-10,-20,
+    -20,
+    -10,
+    -10,
+    -5,
+    -5,
+    -10,
+    -10,
+    -20,
+    -10,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    -10,
+    -10,
+    0,
+    5,
+    5,
+    5,
+    5,
+    0,
+    -10,
+    -5,
+    0,
+    5,
+    5,
+    5,
+    5,
+    0,
+    -5,
+    0,
+    0,
+    5,
+    5,
+    5,
+    5,
+    0,
+    -5,
+    -10,
+    5,
+    5,
+    5,
+    5,
+    5,
+    0,
+    -10,
+    -10,
+    0,
+    5,
+    0,
+    0,
+    0,
+    0,
+    -10,
+    -20,
+    -10,
+    -10,
+    -5,
+    -5,
+    -10,
+    -10,
+    -20,
   ];
 
   static const _kingMiddleTable = [
-    -30,-40,-40,-50,-50,-40,-40,-30,
-    -30,-40,-40,-50,-50,-40,-40,-30,
-    -30,-40,-40,-50,-50,-40,-40,-30,
-    -30,-40,-40,-50,-50,-40,-40,-30,
-    -20,-30,-30,-40,-40,-30,-30,-20,
-    -10,-20,-20,-20,-20,-20,-20,-10,
-     20, 20,  0,  0,  0,  0, 20, 20,
-     20, 30, 10,  0,  0, 10, 30, 20,
+    -30,
+    -40,
+    -40,
+    -50,
+    -50,
+    -40,
+    -40,
+    -30,
+    -30,
+    -40,
+    -40,
+    -50,
+    -50,
+    -40,
+    -40,
+    -30,
+    -30,
+    -40,
+    -40,
+    -50,
+    -50,
+    -40,
+    -40,
+    -30,
+    -30,
+    -40,
+    -40,
+    -50,
+    -50,
+    -40,
+    -40,
+    -30,
+    -20,
+    -30,
+    -30,
+    -40,
+    -40,
+    -30,
+    -30,
+    -20,
+    -10,
+    -20,
+    -20,
+    -20,
+    -20,
+    -20,
+    -20,
+    -10,
+    20,
+    20,
+    0,
+    0,
+    0,
+    0,
+    20,
+    20,
+    20,
+    30,
+    10,
+    0,
+    0,
+    10,
+    30,
+    20,
   ];
 
   int _getPieceSquareValue(PieceType type, PieceColor color, int r, int c) {
     final table = switch (type) {
-      PieceType.pawn   => _pawnTable,
+      PieceType.pawn => _pawnTable,
       PieceType.knight => _knightTable,
       PieceType.bishop => _bishopTable,
-      PieceType.rook   => _rookTable,
-      PieceType.queen  => _queenTable,
-      PieceType.king   => _kingMiddleTable,
+      PieceType.rook => _rookTable,
+      PieceType.queen => _queenTable,
+      PieceType.king => _kingMiddleTable,
     };
     // For white, use the table as-is; for black, mirror vertically
     final row = color == PieceColor.white ? r : 7 - r;
@@ -566,7 +952,9 @@ class _ChessGameScreenState extends State<ChessGameScreen>
   /// Full board evaluation from the perspective of [color].
   int _evaluateBoard(PieceColor color) {
     int score = 0;
-    final opponent = color == PieceColor.white ? PieceColor.black : PieceColor.white;
+    final opponent = color == PieceColor.white
+        ? PieceColor.black
+        : PieceColor.white;
 
     for (int r = 0; r < 8; r++) {
       for (int c = 0; c < 8; c++) {
@@ -608,8 +996,13 @@ class _ChessGameScreenState extends State<ChessGameScreen>
     // Castling rook move
     int castleRookFromC = -1, castleRookToC = -1;
     if (piece.type == PieceType.king && (fc - tc).abs() == 2) {
-      if (tc == 6) { castleRookFromC = 7; castleRookToC = 5; }
-      else if (tc == 2) { castleRookFromC = 0; castleRookToC = 3; }
+      if (tc == 6) {
+        castleRookFromC = 7;
+        castleRookToC = 5;
+      } else if (tc == 2) {
+        castleRookFromC = 0;
+        castleRookToC = 3;
+      }
       if (castleRookFromC >= 0) {
         _board[fr][castleRookToC] = _board[fr][castleRookFromC];
         _board[fr][castleRookFromC] = null;
@@ -631,18 +1024,26 @@ class _ChessGameScreenState extends State<ChessGameScreen>
     ChessPiece? promotedFrom;
     if (piece.type == PieceType.pawn &&
         ((piece.color == PieceColor.white && tr == 0) ||
-         (piece.color == PieceColor.black && tr == 7))) {
+            (piece.color == PieceColor.black && tr == 7))) {
       promotedFrom = piece;
       _board[tr][tc] = ChessPiece(PieceType.queen, piece.color, hasMoved: true);
     }
 
     return _UndoInfo(
-      fr: fr, fc: fc, tr: tr, tc: tc,
-      piece: piece, captured: captured,
-      savedEP: savedEP, savedHasMoved: savedHasMoved,
-      epCaptured: epCaptured, epRow: epRow,
-      castleRookFromC: castleRookFromC, castleRookToC: castleRookToC,
-      row: fr, promotedFrom: promotedFrom,
+      fr: fr,
+      fc: fc,
+      tr: tr,
+      tc: tc,
+      piece: piece,
+      captured: captured,
+      savedEP: savedEP,
+      savedHasMoved: savedHasMoved,
+      epCaptured: epCaptured,
+      epRow: epRow,
+      castleRookFromC: castleRookFromC,
+      castleRookToC: castleRookToC,
+      row: fr,
+      promotedFrom: promotedFrom,
     );
   }
 
@@ -670,8 +1071,16 @@ class _ChessGameScreenState extends State<ChessGameScreen>
   }
 
   /// Minimax with alpha-beta pruning.
-  int _minimax(int depth, int alpha, int beta, bool isMaximizing, PieceColor aiColor) {
-    final opponent = aiColor == PieceColor.white ? PieceColor.black : PieceColor.white;
+  int _minimax(
+    int depth,
+    int alpha,
+    int beta,
+    bool isMaximizing,
+    PieceColor aiColor,
+  ) {
+    final opponent = aiColor == PieceColor.white
+        ? PieceColor.black
+        : PieceColor.white;
 
     if (depth == 0) {
       return _evaluateBoard(aiColor);
@@ -749,7 +1158,9 @@ class _ChessGameScreenState extends State<ChessGameScreen>
   }
 
   (int, int, int, int)? _findBestMove() {
-    final aiColor = _humanColor == PieceColor.white ? PieceColor.black : PieceColor.white;
+    final aiColor = _humanColor == PieceColor.white
+        ? PieceColor.black
+        : PieceColor.white;
     final moves = _getAllMoves(aiColor);
     if (moves.isEmpty) return null;
 
@@ -765,7 +1176,9 @@ class _ChessGameScreenState extends State<ChessGameScreen>
       // Low rating: single-ply scoring + random noise proportional to weakness.
       final noise = (500 - _currentAiRating).clamp(0, 400) ~/ 8;
       for (final (fr, fc, tr, tc) in moves) {
-        final score = _scoreMoveSinglePly(fr, fc, tr, tc, aiColor) + rng.nextInt(noise + 1);
+        final score =
+            _scoreMoveSinglePly(fr, fc, tr, tc, aiColor) +
+            rng.nextInt(noise + 1);
         if (score > bestScore) {
           bestScore = score;
           bestMove = (fr, fc, tr, tc);
@@ -820,7 +1233,9 @@ class _ChessGameScreenState extends State<ChessGameScreen>
       _enPassantTarget = ((fr + tr) ~/ 2, fc);
     }
 
-    final opponent = aiColor == PieceColor.white ? PieceColor.black : PieceColor.white;
+    final opponent = aiColor == PieceColor.white
+        ? PieceColor.black
+        : PieceColor.white;
     if (_isKingInCheck(opponent)) {
       score += 500;
       if (!_hasAnyLegalMoves(opponent)) {
@@ -833,7 +1248,8 @@ class _ChessGameScreenState extends State<ChessGameScreen>
       final advance = piece.color == PieceColor.white ? (6 - tr) : (tr - 1);
       score += advance * 15;
       if (tc >= 3 && tc <= 4) score += 20;
-    } else if (piece.type == PieceType.knight || piece.type == PieceType.bishop) {
+    } else if (piece.type == PieceType.knight ||
+        piece.type == PieceType.bishop) {
       if (tr >= 2 && tr <= 5 && tc >= 2 && tc <= 5) score += 30;
     } else if (piece.type == PieceType.king && (fc - tc).abs() == 2) {
       score += 60;
@@ -882,12 +1298,27 @@ class _ChessGameScreenState extends State<ChessGameScreen>
 
   List<(int, int)> _getPseudoMoves(int r, int c, ChessPiece piece) {
     switch (piece.type) {
-      case PieceType.pawn:   return _pawnMoves(r, c, piece);
-      case PieceType.knight: return _knightMoves(r, c, piece);
-      case PieceType.bishop: return _slidingMoves(r, c, piece, [(1,1),(1,-1),(-1,1),(-1,-1)]);
-      case PieceType.rook:   return _slidingMoves(r, c, piece, [(0,1),(0,-1),(1,0),(-1,0)]);
-      case PieceType.queen:  return _slidingMoves(r, c, piece, [(0,1),(0,-1),(1,0),(-1,0),(1,1),(1,-1),(-1,1),(-1,-1)]);
-      case PieceType.king:   return _kingMoves(r, c, piece);
+      case PieceType.pawn:
+        return _pawnMoves(r, c, piece);
+      case PieceType.knight:
+        return _knightMoves(r, c, piece);
+      case PieceType.bishop:
+        return _slidingMoves(r, c, piece, [(1, 1), (1, -1), (-1, 1), (-1, -1)]);
+      case PieceType.rook:
+        return _slidingMoves(r, c, piece, [(0, 1), (0, -1), (1, 0), (-1, 0)]);
+      case PieceType.queen:
+        return _slidingMoves(r, c, piece, [
+          (0, 1),
+          (0, -1),
+          (1, 0),
+          (-1, 0),
+          (1, 1),
+          (1, -1),
+          (-1, 1),
+          (-1, -1),
+        ]);
+      case PieceType.king:
+        return _kingMoves(r, c, piece);
     }
   }
 
@@ -916,15 +1347,33 @@ class _ChessGameScreenState extends State<ChessGameScreen>
   }
 
   List<(int, int)> _knightMoves(int r, int c, ChessPiece p) {
-    const offsets = [(-2,-1),(-2,1),(-1,-2),(-1,2),(1,-2),(1,2),(2,-1),(2,1)];
+    const offsets = [
+      (-2, -1),
+      (-2, 1),
+      (-1, -2),
+      (-1, 2),
+      (1, -2),
+      (1, 2),
+      (2, -1),
+      (2, 1),
+    ];
     return offsets
         .map((d) => (r + d.$1, c + d.$2))
-        .where((s) => _inBounds(s.$1, s.$2) &&
-            (_board[s.$1][s.$2] == null || _board[s.$1][s.$2]!.color != p.color))
+        .where(
+          (s) =>
+              _inBounds(s.$1, s.$2) &&
+              (_board[s.$1][s.$2] == null ||
+                  _board[s.$1][s.$2]!.color != p.color),
+        )
         .toList();
   }
 
-  List<(int, int)> _slidingMoves(int r, int c, ChessPiece p, List<(int, int)> dirs) {
+  List<(int, int)> _slidingMoves(
+    int r,
+    int c,
+    ChessPiece p,
+    List<(int, int)> dirs,
+  ) {
     final moves = <(int, int)>[];
     for (final (dr, dc) in dirs) {
       var nr = r + dr, nc = c + dc;
@@ -935,7 +1384,8 @@ class _ChessGameScreenState extends State<ChessGameScreen>
           if (_board[nr][nc]!.color != p.color) moves.add((nr, nc));
           break;
         }
-        nr += dr; nc += dc;
+        nr += dr;
+        nc += dc;
       }
     }
     return moves;
@@ -956,17 +1406,23 @@ class _ChessGameScreenState extends State<ChessGameScreen>
     // Castling
     if (!p.hasMoved && !_isKingInCheck(p.color)) {
       // Kingside
-      if (_board[r][7]?.type == PieceType.rook && _board[r][7]?.hasMoved == false) {
+      if (_board[r][7]?.type == PieceType.rook &&
+          _board[r][7]?.hasMoved == false) {
         if (_board[r][5] == null && _board[r][6] == null) {
-          if (!_isSquareAttacked(r, 5, p.color) && !_isSquareAttacked(r, 6, p.color)) {
+          if (!_isSquareAttacked(r, 5, p.color) &&
+              !_isSquareAttacked(r, 6, p.color)) {
             moves.add((r, 6));
           }
         }
       }
       // Queenside
-      if (_board[r][0]?.type == PieceType.rook && _board[r][0]?.hasMoved == false) {
-        if (_board[r][1] == null && _board[r][2] == null && _board[r][3] == null) {
-          if (!_isSquareAttacked(r, 2, p.color) && !_isSquareAttacked(r, 3, p.color)) {
+      if (_board[r][0]?.type == PieceType.rook &&
+          _board[r][0]?.hasMoved == false) {
+        if (_board[r][1] == null &&
+            _board[r][2] == null &&
+            _board[r][3] == null) {
+          if (!_isSquareAttacked(r, 2, p.color) &&
+              !_isSquareAttacked(r, 3, p.color)) {
             moves.add((r, 2));
           }
         }
@@ -978,15 +1434,19 @@ class _ChessGameScreenState extends State<ChessGameScreen>
   bool _inBounds(int r, int c) => r >= 0 && r < 8 && c >= 0 && c < 8;
 
   bool _isSquareAttacked(int r, int c, PieceColor byDefender) {
-    final attacker = byDefender == PieceColor.white ? PieceColor.black : PieceColor.white;
+    final attacker = byDefender == PieceColor.white
+        ? PieceColor.black
+        : PieceColor.white;
     for (int rr = 0; rr < 8; rr++) {
       for (int cc = 0; cc < 8; cc++) {
         final p = _board[rr][cc];
         if (p != null && p.color == attacker) {
           // Use attack-only moves (no castling) to avoid circular recursion
-          final moves = p.type == PieceType.king
-              ? _kingAttacks(rr, cc, p)
-              : _getPseudoMoves(rr, cc, p);
+          final moves = switch (p.type) {
+            PieceType.king => _kingAttacks(rr, cc, p),
+            PieceType.pawn => _pawnAttacks(rr, cc, p),
+            _ => _getPseudoMoves(rr, cc, p),
+          };
           if (moves.contains((r, c))) return true;
         }
       }
@@ -1010,6 +1470,14 @@ class _ChessGameScreenState extends State<ChessGameScreen>
     return moves;
   }
 
+  List<(int, int)> _pawnAttacks(int r, int c, ChessPiece p) {
+    final dir = p.color == PieceColor.white ? -1 : 1;
+    return <(int, int)>[
+      for (final dc in const [-1, 1])
+        if (_inBounds(r + dir, c + dc)) (r + dir, c + dc),
+    ];
+  }
+
   bool _isKingInCheck(PieceColor color) {
     for (int r = 0; r < 8; r++) {
       for (int c = 0; c < 8; c++) {
@@ -1022,7 +1490,13 @@ class _ChessGameScreenState extends State<ChessGameScreen>
     return false;
   }
 
-  bool _wouldBeInCheck(int fromR, int fromC, int toR, int toC, PieceColor color) {
+  bool _wouldBeInCheck(
+    int fromR,
+    int fromC,
+    int toR,
+    int toC,
+    PieceColor color,
+  ) {
     final piece = _board[fromR][fromC]!;
     final savedTo = _board[toR][toC];
     final savedEP = _enPassantTarget;
@@ -1095,7 +1569,11 @@ class _ChessGameScreenState extends State<ChessGameScreen>
       _isWifiGame = false;
       setState(() => _mode = GameMode.menu);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Opponent disconnected'), backgroundColor: GameTheme.accentAlt));
+        const SnackBar(
+          content: Text('Opponent disconnected'),
+          backgroundColor: GameTheme.accentAlt,
+        ),
+      );
     };
 
     setState(() {});
@@ -1131,12 +1609,18 @@ class _ChessGameScreenState extends State<ChessGameScreen>
       appBar: AppBar(
         title: const Text('Chess'),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded, color: GameTheme.textPrimary),
+          icon: const Icon(
+            Icons.arrow_back_ios_rounded,
+            color: GameTheme.textPrimary,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.help_outline_rounded, color: GameTheme.accent),
+            icon: const Icon(
+              Icons.help_outline_rounded,
+              color: GameTheme.accent,
+            ),
             onPressed: () => GameHelp.show(context, 'Chess'),
           ),
         ],
@@ -1148,9 +1632,14 @@ class _ChessGameScreenState extends State<ChessGameScreen>
             children: [
               const Text('\u265A', style: TextStyle(fontSize: 72)),
               const SizedBox(height: 8),
-              const Text('Chess',
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.w800,
-                      color: GameTheme.textPrimary)),
+              const Text(
+                'Chess',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w800,
+                  color: GameTheme.textPrimary,
+                ),
+              ),
               const SizedBox(height: 40),
 
               // 1 Player
@@ -1182,9 +1671,15 @@ class _ChessGameScreenState extends State<ChessGameScreen>
               const SizedBox(height: 40),
 
               // Board theme selector
-              const Text('Board Theme',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600,
-                      color: GameTheme.textSecondary, letterSpacing: 1)),
+              const Text(
+                'Board Theme',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: GameTheme.textSecondary,
+                  letterSpacing: 1,
+                ),
+              ),
               const SizedBox(height: 12),
               SizedBox(
                 height: 60,
@@ -1200,9 +1695,15 @@ class _ChessGameScreenState extends State<ChessGameScreen>
               const SizedBox(height: 28),
 
               // Piece style selector
-              const Text('Piece Style',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600,
-                      color: GameTheme.textSecondary, letterSpacing: 1)),
+              const Text(
+                'Piece Style',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: GameTheme.textSecondary,
+                  letterSpacing: 1,
+                ),
+              ),
               const SizedBox(height: 12),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
@@ -1210,9 +1711,11 @@ class _ChessGameScreenState extends State<ChessGameScreen>
                   children: [
                     for (int i = 0; i < _pieceStyleConfigs.length; i++) ...[
                       if (i > 0) const SizedBox(width: 10),
-                      _pieceStyleChip(i,
+                      _pieceStyleChip(
+                        i,
                         _pieceStyleConfigs[i].displaySymbol,
-                        _pieceStyleConfigs[i].name),
+                        _pieceStyleConfigs[i].name,
+                      ),
                     ],
                   ],
                 ),
@@ -1249,19 +1752,33 @@ class _ChessGameScreenState extends State<ChessGameScreen>
           children: [
             Icon(icon, color: GameTheme.accent, size: 28),
             const SizedBox(width: 16),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700,
-                        color: GameTheme.textPrimary)),
-                Text(subtitle,
-                    style: const TextStyle(fontSize: 13, color: GameTheme.textSecondary)),
-              ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: GameTheme.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: GameTheme.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const Spacer(),
-            const Icon(Icons.arrow_forward_ios_rounded,
-                color: GameTheme.textSecondary, size: 18),
+            const Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: GameTheme.textSecondary,
+              size: 18,
+            ),
           ],
         ),
       ),
@@ -1279,7 +1796,9 @@ class _ChessGameScreenState extends State<ChessGameScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: selected ? GameTheme.accent.withValues(alpha: 0.15) : GameTheme.surface,
+          color: selected
+              ? GameTheme.accent.withValues(alpha: 0.15)
+              : GameTheme.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: selected ? GameTheme.accent : GameTheme.border,
@@ -1291,7 +1810,8 @@ class _ChessGameScreenState extends State<ChessGameScreen>
           children: [
             // Mini board preview
             SizedBox(
-              width: 24, height: 24,
+              width: 24,
+              height: 24,
               child: GridView.count(
                 crossAxisCount: 2,
                 physics: const NeverScrollableScrollPhysics(),
@@ -1304,11 +1824,14 @@ class _ChessGameScreenState extends State<ChessGameScreen>
               ),
             ),
             const SizedBox(width: 8),
-            Text(t.name,
-                style: TextStyle(
-                  fontSize: 13, fontWeight: FontWeight.w600,
-                  color: selected ? GameTheme.accent : GameTheme.textSecondary,
-                )),
+            Text(
+              t.name,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: selected ? GameTheme.accent : GameTheme.textSecondary,
+              ),
+            ),
           ],
         ),
       ),
@@ -1325,7 +1848,9 @@ class _ChessGameScreenState extends State<ChessGameScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: selected ? GameTheme.accent.withValues(alpha: 0.15) : GameTheme.surface,
+          color: selected
+              ? GameTheme.accent.withValues(alpha: 0.15)
+              : GameTheme.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: selected ? GameTheme.accent : GameTheme.border,
@@ -1334,11 +1859,24 @@ class _ChessGameScreenState extends State<ChessGameScreen>
         ),
         child: Column(
           children: [
-            Text(symbol, style: TextStyle(fontSize: 22,
-              color: selected ? GameTheme.textPrimary : GameTheme.textSecondary)),
+            Text(
+              symbol,
+              style: TextStyle(
+                fontSize: 22,
+                color: selected
+                    ? GameTheme.textPrimary
+                    : GameTheme.textSecondary,
+              ),
+            ),
             const SizedBox(height: 2),
-            Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
-              color: selected ? GameTheme.accent : GameTheme.textSecondary)),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: selected ? GameTheme.accent : GameTheme.textSecondary,
+              ),
+            ),
           ],
         ),
       ),
@@ -1360,7 +1898,8 @@ class _ChessGameScreenState extends State<ChessGameScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 40, height: 4,
+                width: 40,
+                height: 4,
                 decoration: BoxDecoration(
                   color: GameTheme.border,
                   borderRadius: BorderRadius.circular(2),
@@ -1371,7 +1910,10 @@ class _ChessGameScreenState extends State<ChessGameScreen>
               // Difficulty selector (1-player only)
               if (mode == PlayerMode.onePlayer) ...[
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: GameTheme.accent.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
@@ -1379,19 +1921,33 @@ class _ChessGameScreenState extends State<ChessGameScreen>
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.military_tech_rounded,
-                          color: GameTheme.accent, size: 20),
+                      const Icon(
+                        Icons.military_tech_rounded,
+                        color: GameTheme.accent,
+                        size: 20,
+                      ),
                       const SizedBox(width: 8),
-                      Text('Your Rating: $_playerRating',
-                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700,
-                              color: GameTheme.accent)),
+                      Text(
+                        'Your Rating: $_playerRating',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: GameTheme.accent,
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text('AI DIFFICULTY',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700,
-                        color: GameTheme.textSecondary, letterSpacing: 1.5)),
+                const Text(
+                  'AI DIFFICULTY',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: GameTheme.textSecondary,
+                    letterSpacing: 1.5,
+                  ),
+                ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -1406,8 +1962,11 @@ class _ChessGameScreenState extends State<ChessGameScreen>
 
               Text(
                 'Choose your side',
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700,
-                    color: GameTheme.textPrimary),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: GameTheme.textPrimary,
+                ),
               ),
               const SizedBox(height: 24),
               Row(
@@ -1424,9 +1983,16 @@ class _ChessGameScreenState extends State<ChessGameScreen>
     );
   }
 
-  Widget _difficultyButton(int level, void Function(void Function()) setSheetState) {
+  Widget _difficultyButton(
+    int level,
+    void Function(void Function()) setSheetState,
+  ) {
     const labels = ['Easy', 'Medium', 'Hard'];
-    const icons = [Icons.sentiment_satisfied_rounded, Icons.psychology_rounded, Icons.local_fire_department_rounded];
+    const icons = [
+      Icons.sentiment_satisfied_rounded,
+      Icons.psychology_rounded,
+      Icons.local_fire_department_rounded,
+    ];
     final selected = _aiDifficulty == level;
     return GestureDetector(
       onTap: () {
@@ -1437,7 +2003,9 @@ class _ChessGameScreenState extends State<ChessGameScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: selected ? GameTheme.accent.withValues(alpha: 0.15) : GameTheme.background,
+          color: selected
+              ? GameTheme.accent.withValues(alpha: 0.15)
+              : GameTheme.background,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: selected ? GameTheme.accent : GameTheme.border,
@@ -1446,20 +2014,29 @@ class _ChessGameScreenState extends State<ChessGameScreen>
         ),
         child: Column(
           children: [
-            Icon(icons[level], size: 22,
-                color: selected ? GameTheme.accent : GameTheme.textSecondary),
+            Icon(
+              icons[level],
+              size: 22,
+              color: selected ? GameTheme.accent : GameTheme.textSecondary,
+            ),
             const SizedBox(height: 4),
-            Text(labels[level],
-                style: TextStyle(
-                  fontSize: 13, fontWeight: FontWeight.w700,
-                  color: selected ? GameTheme.accent : GameTheme.textSecondary,
-                )),
+            Text(
+              labels[level],
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: selected ? GameTheme.accent : GameTheme.textSecondary,
+              ),
+            ),
             const SizedBox(height: 2),
-            Text('${_aiRatings[level]} ELO',
-                style: TextStyle(
-                  fontSize: 10, fontWeight: FontWeight.w600,
-                  color: selected ? GameTheme.accent : GameTheme.textSecondary,
-                )),
+            Text(
+              '${_aiRatings[level]} ELO',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: selected ? GameTheme.accent : GameTheme.textSecondary,
+              ),
+            ),
           ],
         ),
       ),
@@ -1485,13 +2062,17 @@ class _ChessGameScreenState extends State<ChessGameScreen>
           children: [
             Text(
               isWhite ? '\u2654' : '\u265A',
-              style: TextStyle(fontSize: 48, color: isWhite ? Colors.black : Colors.white),
+              style: TextStyle(
+                fontSize: 48,
+                color: isWhite ? Colors.black : Colors.white,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               isWhite ? 'White' : 'Black',
               style: TextStyle(
-                fontSize: 16, fontWeight: FontWeight.w700,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
                 color: isWhite ? Colors.black : Colors.white,
               ),
             ),
@@ -1518,12 +2099,18 @@ class _ChessGameScreenState extends State<ChessGameScreen>
     return Scaffold(
       backgroundColor: GameTheme.background,
       appBar: AppBar(
-        title: Text(_isWifiGame ? 'Chess — WiFi'
-            : _playerMode == PlayerMode.onePlayer
-            ? 'You $_playerRating — AI $_currentAiRating'
-            : 'Chess — 2 Players'),
+        title: Text(
+          _isWifiGame
+              ? 'Chess — WiFi'
+              : _playerMode == PlayerMode.onePlayer
+              ? 'You $_playerRating — AI $_currentAiRating'
+              : 'Chess — 2 Players',
+        ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded, color: GameTheme.textPrimary),
+          icon: const Icon(
+            Icons.arrow_back_ios_rounded,
+            color: GameTheme.textPrimary,
+          ),
           onPressed: () {
             _disposeWifi();
             setState(() {
@@ -1536,15 +2123,23 @@ class _ChessGameScreenState extends State<ChessGameScreen>
           // Hint button — Easy mode only
           if (_playerMode == PlayerMode.onePlayer && _aiDifficulty == 0)
             IconButton(
-              icon: const Icon(Icons.lightbulb_outline_rounded, color: Color(0xFFFFD54F)),
+              icon: const Icon(
+                Icons.lightbulb_outline_rounded,
+                color: Color(0xFFFFD54F),
+              ),
               onPressed: _showHint,
               tooltip: 'Show hint',
             ),
           // Theme switcher
           IconButton(
-            icon: const Icon(Icons.palette_outlined, color: GameTheme.textSecondary),
+            icon: const Icon(
+              Icons.palette_outlined,
+              color: GameTheme.textSecondary,
+            ),
             onPressed: () {
-              setState(() => _themeIndex = (_themeIndex + 1) % _boardThemes.length);
+              setState(
+                () => _themeIndex = (_themeIndex + 1) % _boardThemes.length,
+              );
               HapticFeedback.selectionClick();
             },
             tooltip: 'Change board theme',
@@ -1556,7 +2151,8 @@ class _ChessGameScreenState extends State<ChessGameScreen>
               _hintFrom = null;
               _hintTo = null;
               setState(() {});
-              if (_playerMode == PlayerMode.onePlayer && _humanColor == PieceColor.black) {
+              if (_playerMode == PlayerMode.onePlayer &&
+                  _humanColor == PieceColor.black) {
                 _scheduleAiMove();
               }
             },
@@ -1566,131 +2162,166 @@ class _ChessGameScreenState extends State<ChessGameScreen>
       body: Stack(
         children: [
           Column(
-        children: [
-          // Status
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (_aiThinking) ...[
-                  const SizedBox(
-                    width: 16, height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: GameTheme.accent),
-                  ),
-                  const SizedBox(width: 8),
-                ],
-                Text(
-                  _aiThinking ? 'AI is thinking...' : _status,
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: _status.contains('check') ? GameTheme.accentAlt : GameTheme.accent,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Turn indicator
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _turnIndicator(PieceColor.white),
-              const SizedBox(width: 20),
-              _turnIndicator(PieceColor.black),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          // Board theme name
-          Text(_theme.name,
-              style: const TextStyle(fontSize: 11, color: GameTheme.textSecondary,
-                  letterSpacing: 1)),
-          const SizedBox(height: 6),
-
-          // Board
-          Container(
-            width: boardSize,
-            height: boardSize,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(6),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.5),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: Stack(
-                children: [
-                  for (int r = 0; r < 8; r++)
-                    for (int c = 0; c < 8; c++)
-                      Positioned(
-                        left: c * cellSize,
-                        top: r * cellSize,
-                        child: GestureDetector(
-                          onTap: () => _onSquareTap(r, c),
-                          child: _buildSquare(r, c, cellSize),
+              // Status
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (_aiThinking) ...[
+                      const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: GameTheme.accent,
                         ),
                       ),
-                ],
+                      const SizedBox(width: 8),
+                    ],
+                    Text(
+                      _aiThinking ? 'AI is thinking...' : _status,
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: _status.contains('check')
+                            ? GameTheme.accentAlt
+                            : GameTheme.accent,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ),
 
-          const Spacer(),
-
-          if (_gameOver)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: Row(
+              // Turn indicator
+              Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  ElevatedButton(
-                    onPressed: () {
-                      _initBoard();
-                      setState(() {});
-                      if (_playerMode == PlayerMode.onePlayer && _humanColor == PieceColor.black) {
-                        _scheduleAiMove();
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: GameTheme.accent,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: const Text('Rematch',
-                        style: TextStyle(fontWeight: FontWeight.w700, color: Colors.white)),
-                  ),
-                  const SizedBox(width: 12),
-                  OutlinedButton(
-                    onPressed: () => setState(() => _mode = GameMode.menu),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: GameTheme.accent),
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: const Text('Menu',
-                        style: TextStyle(fontWeight: FontWeight.w700, color: GameTheme.accent)),
-                  ),
+                  _turnIndicator(PieceColor.white),
+                  const SizedBox(width: 20),
+                  _turnIndicator(PieceColor.black),
                 ],
               ),
-            ),
 
-          Padding(
-            padding: const EdgeInsets.only(bottom: 24),
-            child: Text(
-              'Tap a piece to select, then tap where to move',
-              style: TextStyle(color: GameTheme.textSecondary.withValues(alpha: 0.5), fontSize: 12),
-            ),
+              const SizedBox(height: 12),
+
+              // Board theme name
+              Text(
+                _theme.name,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: GameTheme.textSecondary,
+                  letterSpacing: 1,
+                ),
+              ),
+              const SizedBox(height: 6),
+
+              // Board
+              Container(
+                width: boardSize,
+                height: boardSize,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(6),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: Stack(
+                    children: [
+                      for (int r = 0; r < 8; r++)
+                        for (int c = 0; c < 8; c++)
+                          Positioned(
+                            left: c * cellSize,
+                            top: r * cellSize,
+                            child: GestureDetector(
+                              onTap: () => _onSquareTap(r, c),
+                              child: _buildSquare(r, c, cellSize),
+                            ),
+                          ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const Spacer(),
+
+              if (_gameOver)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () {
+                          _initBoard();
+                          setState(() {});
+                          if (_playerMode == PlayerMode.onePlayer &&
+                              _humanColor == PieceColor.black) {
+                            _scheduleAiMove();
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: GameTheme.accent,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Rematch',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      OutlinedButton(
+                        onPressed: () => setState(() => _mode = GameMode.menu),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: GameTheme.accent),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Menu',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: GameTheme.accent,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+              Padding(
+                padding: const EdgeInsets.only(bottom: 24),
+                child: Text(
+                  'Tap a piece to select, then tap where to move',
+                  style: TextStyle(
+                    color: GameTheme.textSecondary.withValues(alpha: 0.5),
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
 
           // Checkmate celebration overlay
           if (_showCheckmateOverlay && _checkmateAnimCtrl != null)
@@ -1701,7 +2332,9 @@ class _ChessGameScreenState extends State<ChessGameScreen>
   }
 
   Widget _buildCheckmateOverlay() {
-    final winner = _turn == PieceColor.white ? PieceColor.black : PieceColor.white;
+    final winner = _turn == PieceColor.white
+        ? PieceColor.black
+        : PieceColor.white;
     final winnerName = winner == PieceColor.white ? 'White' : 'Black';
     final kingSymbol = winner == PieceColor.white ? '\u2654' : '\u265A';
 
@@ -1720,7 +2353,10 @@ class _ChessGameScreenState extends State<ChessGameScreen>
               scale: t,
               child: Container(
                 margin: const EdgeInsets.symmetric(horizontal: 40),
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 36),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 36,
+                ),
                 decoration: BoxDecoration(
                   color: GameTheme.surface,
                   borderRadius: BorderRadius.circular(24),
@@ -1736,18 +2372,32 @@ class _ChessGameScreenState extends State<ChessGameScreen>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.emoji_events_rounded,
-                        color: GameTheme.gold, size: 48),
+                    const Icon(
+                      Icons.emoji_events_rounded,
+                      color: GameTheme.gold,
+                      size: 48,
+                    ),
                     const SizedBox(height: 12),
-                    const Text('Checkmate!',
-                        style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900,
-                            color: GameTheme.gold, letterSpacing: 1)),
+                    const Text(
+                      'Checkmate!',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w900,
+                        color: GameTheme.gold,
+                        letterSpacing: 1,
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     Text(kingSymbol, style: const TextStyle(fontSize: 56)),
                     const SizedBox(height: 8),
-                    Text('$winnerName wins!',
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600,
-                            color: GameTheme.textPrimary)),
+                    Text(
+                      '$winnerName wins!',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: GameTheme.textPrimary,
+                      ),
+                    ),
                     const SizedBox(height: 28),
                     Row(
                       mainAxisSize: MainAxisSize.min,
@@ -1763,13 +2413,21 @@ class _ChessGameScreenState extends State<ChessGameScreen>
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: GameTheme.accent,
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
-                          child: const Text('Play Again',
-                              style: TextStyle(fontWeight: FontWeight.w700,
-                                  color: Colors.white)),
+                          child: const Text(
+                            'Play Again',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
                         const SizedBox(width: 12),
                         OutlinedButton(
@@ -1779,13 +2437,21 @@ class _ChessGameScreenState extends State<ChessGameScreen>
                           }),
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(color: GameTheme.accent),
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
-                          child: const Text('Menu',
-                              style: TextStyle(fontWeight: FontWeight.w700,
-                                  color: GameTheme.accent)),
+                          child: const Text(
+                            'Menu',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: GameTheme.accent,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -1806,7 +2472,9 @@ class _ChessGameScreenState extends State<ChessGameScreen>
       duration: const Duration(milliseconds: 300),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: active ? GameTheme.accent.withValues(alpha: 0.15) : GameTheme.surface,
+        color: active
+            ? GameTheme.accent.withValues(alpha: 0.15)
+            : GameTheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: active ? GameTheme.accent : GameTheme.border,
@@ -1816,7 +2484,8 @@ class _ChessGameScreenState extends State<ChessGameScreen>
       child: Row(
         children: [
           Container(
-            width: 16, height: 16,
+            width: 16,
+            height: 16,
             decoration: BoxDecoration(
               color: isWhite ? _theme.whitePiece : _theme.blackPiece,
               shape: BoxShape.circle,
@@ -1838,7 +2507,9 @@ class _ChessGameScreenState extends State<ChessGameScreen>
               color == _humanColor ? '(You)' : '(AI)',
               style: TextStyle(
                 fontSize: 11,
-                color: active ? GameTheme.accent.withValues(alpha: 0.6) : GameTheme.textSecondary.withValues(alpha: 0.5),
+                color: active
+                    ? GameTheme.accent.withValues(alpha: 0.6)
+                    : GameTheme.textSecondary.withValues(alpha: 0.5),
               ),
             ),
           ],
@@ -1909,7 +2580,10 @@ class _ChessGameScreenState extends State<ChessGameScreen>
                     width: size,
                     height: size,
                     decoration: BoxDecoration(
-                      border: Border.all(color: const Color(0xCCFF4444), width: 3),
+                      border: Border.all(
+                        color: const Color(0xCCFF4444),
+                        width: 3,
+                      ),
                       color: const Color(0x33FF4444),
                     ),
                   )
@@ -1941,8 +2615,7 @@ class _ChessGameScreenState extends State<ChessGameScreen>
             ),
 
           // Piece
-          if (piece != null)
-            _buildPiece(piece, size),
+          if (piece != null) _buildPiece(piece, size),
         ],
       ),
     );
@@ -1954,35 +2627,64 @@ class _ChessGameScreenState extends State<ChessGameScreen>
     final symbol = style.symbols[piece.type]!;
     final contrastColor = isWhite ? _theme.blackPiece : _theme.whitePiece;
     final gradientColors = isWhite
-        ? [_theme.whitePiece, Color.lerp(_theme.whitePiece, Colors.grey.shade300, 0.3)!]
-        : [Color.lerp(_theme.blackPiece, Colors.grey.shade700, 0.2)!, _theme.blackPiece];
+        ? [
+            _theme.whitePiece,
+            Color.lerp(_theme.whitePiece, Colors.grey.shade300, 0.3)!,
+          ]
+        : [
+            Color.lerp(_theme.blackPiece, Colors.grey.shade700, 0.2)!,
+            _theme.blackPiece,
+          ];
 
     return Container(
-      width: size * 0.82, height: size * 0.82,
+      width: size * 0.82,
+      height: size * 0.82,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topLeft, end: Alignment.bottomRight,
-          colors: gradientColors),
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: gradientColors,
+        ),
         shape: BoxShape.circle,
         border: Border.all(
-          color: isWhite ? Colors.black.withValues(alpha: 0.25)
-                         : Colors.white.withValues(alpha: 0.15),
-          width: 2),
+          color: isWhite
+              ? Colors.black.withValues(alpha: 0.25)
+              : Colors.white.withValues(alpha: 0.15),
+          width: 2,
+        ),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.4),
-            blurRadius: 4, offset: const Offset(1, 2)),
           BoxShadow(
-            color: (isWhite ? Colors.white : Colors.black).withValues(alpha: 0.4),
-            blurRadius: 2, spreadRadius: -1),
+            color: Colors.black.withValues(alpha: 0.4),
+            blurRadius: 4,
+            offset: const Offset(1, 2),
+          ),
+          BoxShadow(
+            color: (isWhite ? Colors.white : Colors.black).withValues(
+              alpha: 0.4,
+            ),
+            blurRadius: 2,
+            spreadRadius: -1,
+          ),
         ],
       ),
-      child: Center(child: Text(symbol,
-        style: TextStyle(fontSize: size * 0.5, fontWeight: FontWeight.w900,
-          color: contrastColor, height: 1.0,
-          shadows: [
-            Shadow(color: contrastColor.withValues(alpha: 0.3),
-              blurRadius: 1, offset: const Offset(0, 1)),
-          ]))),
+      child: Center(
+        child: Text(
+          symbol,
+          style: TextStyle(
+            fontSize: size * 0.5,
+            fontWeight: FontWeight.w900,
+            color: contrastColor,
+            height: 1.0,
+            shadows: [
+              Shadow(
+                color: contrastColor.withValues(alpha: 0.3),
+                blurRadius: 1,
+                offset: const Offset(0, 1),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -2006,21 +2708,30 @@ class _PieceStyleConfig {
 }
 
 const _pieceSymbolsFilled = <PieceType, String>{
-  PieceType.king: '\u265A', PieceType.queen: '\u265B',
-  PieceType.rook: '\u265C', PieceType.bishop: '\u265D',
-  PieceType.knight: '\u265E', PieceType.pawn: '\u265F',
+  PieceType.king: '\u265A',
+  PieceType.queen: '\u265B',
+  PieceType.rook: '\u265C',
+  PieceType.bishop: '\u265D',
+  PieceType.knight: '\u265E',
+  PieceType.pawn: '\u265F',
 };
 
 const _pieceSymbolsOutlined = <PieceType, String>{
-  PieceType.king: '\u2654', PieceType.queen: '\u2655',
-  PieceType.rook: '\u2656', PieceType.bishop: '\u2657',
-  PieceType.knight: '\u2658', PieceType.pawn: '\u2659',
+  PieceType.king: '\u2654',
+  PieceType.queen: '\u2655',
+  PieceType.rook: '\u2656',
+  PieceType.bishop: '\u2657',
+  PieceType.knight: '\u2658',
+  PieceType.pawn: '\u2659',
 };
 
 const _pieceSymbolsLetter = <PieceType, String>{
-  PieceType.king: 'K', PieceType.queen: 'Q',
-  PieceType.rook: 'R', PieceType.bishop: 'B',
-  PieceType.knight: 'N', PieceType.pawn: 'P',
+  PieceType.king: 'K',
+  PieceType.queen: 'Q',
+  PieceType.rook: 'R',
+  PieceType.bishop: 'B',
+  PieceType.knight: 'N',
+  PieceType.pawn: 'P',
 };
 
 const _pieceStyleConfigs = <_PieceStyleConfig>[
@@ -2058,13 +2769,20 @@ class _UndoInfo {
   final ChessPiece? promotedFrom;
 
   _UndoInfo({
-    required this.fr, required this.fc,
-    required this.tr, required this.tc,
-    required this.piece, required this.captured,
-    required this.savedEP, required this.savedHasMoved,
-    required this.epCaptured, required this.epRow,
-    required this.castleRookFromC, required this.castleRookToC,
-    required this.row, required this.promotedFrom,
+    required this.fr,
+    required this.fc,
+    required this.tr,
+    required this.tc,
+    required this.piece,
+    required this.captured,
+    required this.savedEP,
+    required this.savedHasMoved,
+    required this.epCaptured,
+    required this.epRow,
+    required this.castleRookFromC,
+    required this.castleRookToC,
+    required this.row,
+    required this.promotedFrom,
   });
 }
 
@@ -2110,7 +2828,11 @@ class _CaptureBurstPainter extends CustomPainter {
     if (progress < 0.3) {
       final flashPaint = Paint()
         ..color = Colors.white.withValues(alpha: (1 - progress / 0.3) * 0.7);
-      canvas.drawCircle(center, size.width * 0.3 * (1 - progress / 0.3), flashPaint);
+      canvas.drawCircle(
+        center,
+        size.width * 0.3 * (1 - progress / 0.3),
+        flashPaint,
+      );
     }
   }
 

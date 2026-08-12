@@ -61,11 +61,30 @@ class _HeadsUpScreenState extends State<HeadsUpScreen> {
   final _rng = Random();
 
   @override
+  void initState() {
+    super.initState();
+    unawaited(
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]),
+    );
+  }
+
+  @override
   void dispose() {
     _timer?.cancel();
     for (final c in _teamControllers) {
       c.dispose();
     }
+    unawaited(
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+      ]),
+    );
     super.dispose();
   }
 
@@ -95,37 +114,47 @@ class _HeadsUpScreenState extends State<HeadsUpScreen> {
       context: context,
       builder: (ctx) => Dialog(
         backgroundColor: GameTheme.surface,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
           padding: const EdgeInsets.all(20),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Text('Pick team color',
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Pick team color',
                 style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: GameTheme.textPrimary)),
-            const SizedBox(height: 16),
-            Wrap(spacing: 10, runSpacing: 10, children: [
-              for (int i = 0; i < _teamPalette.length; i++)
-                GestureDetector(
-                  onTap: () => Navigator.pop(ctx, i),
-                  child: Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: _teamPalette[i],
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                          color: i == _teamColorIndexes[teamIdx]
-                              ? Colors.white
-                              : Colors.transparent,
-                          width: 3),
-                    ),
-                  ),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: GameTheme.textPrimary,
                 ),
-            ]),
-          ]),
+              ),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  for (int i = 0; i < _teamPalette.length; i++)
+                    GestureDetector(
+                      onTap: () => Navigator.pop(ctx, i),
+                      child: Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: _teamPalette[i],
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: i == _teamColorIndexes[teamIdx]
+                                ? Colors.white
+                                : Colors.transparent,
+                            width: 3,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -140,10 +169,12 @@ class _HeadsUpScreenState extends State<HeadsUpScreen> {
     _teams.clear();
     for (int i = 0; i < _teamControllers.length; i++) {
       final name = _teamControllers[i].text.trim();
-      _teams.add(_Team(
-        name.isEmpty ? 'Team ${i + 1}' : name,
-        _teamPalette[_teamColorIndexes[i]],
-      ));
+      _teams.add(
+        _Team(
+          name.isEmpty ? 'Team ${i + 1}' : name,
+          _teamPalette[_teamColorIndexes[i]],
+        ),
+      );
     }
     _wordDeck = [..._category.words()]..shuffle(_rng);
     _deckIndex = 0;
@@ -246,10 +277,12 @@ class _HeadsUpScreenState extends State<HeadsUpScreen> {
     return Scaffold(
       backgroundColor: GameTheme.background,
       appBar: AppBar(
-        title: const Text('Headsup! / Dumb Charades'),
+        title: const Text('Guess It!'),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded,
-              color: GameTheme.textPrimary),
+          icon: const Icon(
+            Icons.arrow_back_ios_rounded,
+            color: GameTheme.textPrimary,
+          ),
           onPressed: () {
             _timer?.cancel();
             Navigator.pop(context);
@@ -258,9 +291,11 @@ class _HeadsUpScreenState extends State<HeadsUpScreen> {
         actions: [
           if (_phase == _Phase.setup)
             IconButton(
-              icon: const Icon(Icons.help_outline_rounded,
-                  color: GameTheme.accent),
-              onPressed: () => GameHelp.show(context, 'Headsup!'),
+              icon: const Icon(
+                Icons.help_outline_rounded,
+                color: GameTheme.accent,
+              ),
+              onPressed: () => GameHelp.show(context, 'Guess It!'),
             ),
         ],
       ),
@@ -290,77 +325,101 @@ class _HeadsUpScreenState extends State<HeadsUpScreen> {
           for (int i = 0; i < _teamControllers.length; i++)
             Padding(
               padding: const EdgeInsets.only(bottom: 10),
-              child: Row(children: [
-                GestureDetector(
-                  onTap: () => _pickColor(i),
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: _teamPalette[_teamColorIndexes[i]],
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white24, width: 2),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => _pickColor(i),
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: _teamPalette[_teamColorIndexes[i]],
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white24, width: 2),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: TextField(
-                    controller: _teamControllers[i],
-                    maxLength: 16,
-                    textCapitalization: TextCapitalization.words,
-                    style: const TextStyle(
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: TextField(
+                      controller: _teamControllers[i],
+                      maxLength: 16,
+                      textCapitalization: TextCapitalization.words,
+                      style: const TextStyle(
                         color: GameTheme.textPrimary,
-                        fontWeight: FontWeight.w600),
-                    decoration: InputDecoration(
-                      counterText: '',
-                      filled: true,
-                      fillColor: GameTheme.surface,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 12),
-                      border: OutlineInputBorder(
+                        fontWeight: FontWeight.w600,
+                      ),
+                      decoration: InputDecoration(
+                        counterText: '',
+                        filled: true,
+                        fillColor: GameTheme.surface,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                        border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide.none),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-                if (_teamControllers.length > 2)
-                  IconButton(
-                    icon: const Icon(Icons.remove_circle_outline,
-                        color: GameTheme.accentAlt),
-                    onPressed: () => _removeTeam(i),
-                  ),
-              ]),
+                  if (_teamControllers.length > 2)
+                    IconButton(
+                      icon: const Icon(
+                        Icons.remove_circle_outline,
+                        color: GameTheme.accentAlt,
+                      ),
+                      onPressed: () => _removeTeam(i),
+                    ),
+                ],
+              ),
             ),
           if (_teamControllers.length < 4)
             TextButton.icon(
               onPressed: _addTeam,
-              icon: const Icon(Icons.add_circle_outline,
-                  color: GameTheme.accent),
-              label: const Text('Add team',
-                  style: TextStyle(
-                      color: GameTheme.accent,
-                      fontWeight: FontWeight.w700)),
+              icon: const Icon(
+                Icons.add_circle_outline,
+                color: GameTheme.accent,
+              ),
+              label: const Text(
+                'Add team',
+                style: TextStyle(
+                  color: GameTheme.accent,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
           const SizedBox(height: 20),
           _sectionTitle('Category'),
           const SizedBox(height: 8),
-          Wrap(spacing: 8, runSpacing: 8, children: [
-            for (final c in HeadsUpCategory.values) _categoryChip(c),
-          ]),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final c in HeadsUpCategory.values) _categoryChip(c),
+            ],
+          ),
           const SizedBox(height: 24),
           _sectionTitle('Points to win'),
           const SizedBox(height: 8),
-          Wrap(spacing: 8, runSpacing: 8, children: [
-            for (final p in [10, 15, 20, 25]) _pointsChip(p),
-          ]),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final p in [10, 15, 20, 25]) _pointsChip(p),
+            ],
+          ),
           const SizedBox(height: 24),
           _sectionTitle('Time per round'),
           const SizedBox(height: 8),
-          Wrap(spacing: 8, runSpacing: 8, children: [
-            for (final s in [30, 60, 90, 120, 180])
-              _timerChip(s),
-          ]),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final s in [30, 60, 90, 120, 180]) _timerChip(s),
+            ],
+          ),
           const SizedBox(height: 32),
           SizedBox(
             width: double.infinity,
@@ -370,13 +429,17 @@ class _HeadsUpScreenState extends State<HeadsUpScreen> {
                 backgroundColor: GameTheme.accent,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-              child: const Text('Start match',
-                  style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white)),
+              child: const Text(
+                'Start match',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
             ),
           ),
         ],
@@ -384,12 +447,15 @@ class _HeadsUpScreenState extends State<HeadsUpScreen> {
     );
   }
 
-  Widget _sectionTitle(String label) => Text(label,
-      style: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 1.2,
-          color: GameTheme.textSecondary));
+  Widget _sectionTitle(String label) => Text(
+    label,
+    style: const TextStyle(
+      fontSize: 13,
+      fontWeight: FontWeight.w700,
+      letterSpacing: 1.2,
+      color: GameTheme.textSecondary,
+    ),
+  );
 
   Widget _categoryChip(HeadsUpCategory c) {
     final selected = c == _category;
@@ -405,30 +471,36 @@ class _HeadsUpScreenState extends State<HeadsUpScreen> {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: GameTheme.accent, width: 1.5),
         ),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Text(c.emoji, style: const TextStyle(fontSize: 16)),
-          const SizedBox(width: 6),
-          Text(c.label,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(c.emoji, style: const TextStyle(fontSize: 16)),
+            const SizedBox(width: 6),
+            Text(
+              c.label,
               style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: selected ? Colors.white : GameTheme.textPrimary)),
-        ]),
+                fontWeight: FontWeight.w700,
+                color: selected ? Colors.white : GameTheme.textPrimary,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _pointsChip(int p) => _smallChip(
-        label: '$p pts',
-        selected: _targetPoints == p,
-        onTap: () => setState(() => _targetPoints = p),
-      );
+    label: '$p pts',
+    selected: _targetPoints == p,
+    onTap: () => setState(() => _targetPoints = p),
+  );
 
   Widget _timerChip(int s) {
     final label = s < 60
         ? '${s}s'
         : s == 60
-            ? '1 min'
-            : '${(s / 60).toStringAsFixed(s % 60 == 0 ? 0 : 1)} min';
+        ? '1 min'
+        : '${(s / 60).toStringAsFixed(s % 60 == 0 ? 0 : 1)} min';
     return _smallChip(
       label: label,
       selected: _timerSeconds == s,
@@ -436,10 +508,11 @@ class _HeadsUpScreenState extends State<HeadsUpScreen> {
     );
   }
 
-  Widget _smallChip(
-      {required String label,
-      required bool selected,
-      required VoidCallback onTap}) {
+  Widget _smallChip({
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
     return GestureDetector(
       onTap: () {
         HapticFeedback.selectionClick();
@@ -452,11 +525,14 @@ class _HeadsUpScreenState extends State<HeadsUpScreen> {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: GameTheme.accent, width: 1.5),
         ),
-        child: Text(label,
-            style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: selected ? Colors.white : GameTheme.accent)),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: selected ? Colors.white : GameTheme.accent,
+          ),
+        ),
       ),
     );
   }
@@ -474,28 +550,42 @@ class _HeadsUpScreenState extends State<HeadsUpScreen> {
             Container(
               width: 88,
               height: 88,
-              decoration: BoxDecoration(color: team.color, shape: BoxShape.circle),
-              child: const Icon(Icons.groups_rounded,
-                  color: Colors.white, size: 48),
+              decoration: BoxDecoration(
+                color: team.color,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.groups_rounded,
+                color: Colors.white,
+                size: 48,
+              ),
             ),
             const SizedBox(height: 16),
-            Text(team.name,
-                style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w800,
-                    color: GameTheme.textPrimary)),
+            Text(
+              team.name,
+              style: const TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w800,
+                color: GameTheme.textPrimary,
+              ),
+            ),
             const SizedBox(height: 6),
-            Text('${team.score} / $_targetPoints',
-                style: const TextStyle(
-                    fontSize: 15, color: GameTheme.textSecondary)),
+            Text(
+              '${team.score} / $_targetPoints',
+              style: const TextStyle(
+                fontSize: 15,
+                color: GameTheme.textSecondary,
+              ),
+            ),
             const SizedBox(height: 28),
             const Text(
               'Hold the phone to your forehead.\nYour teammates will act or describe the word.\nTap CORRECT if you guess, SKIP to pass.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                  fontSize: 14,
-                  color: GameTheme.textPrimary,
-                  height: 1.5),
+                fontSize: 14,
+                color: GameTheme.textPrimary,
+                height: 1.5,
+              ),
             ),
             const SizedBox(height: 28),
             SizedBox(
@@ -506,13 +596,17 @@ class _HeadsUpScreenState extends State<HeadsUpScreen> {
                   backgroundColor: team.color,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-                child: const Text('Start round',
-                    style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white)),
+                child: const Text(
+                  'Start round',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
               ),
             ),
           ],
@@ -526,9 +620,7 @@ class _HeadsUpScreenState extends State<HeadsUpScreen> {
   Widget _buildPlaying() {
     final team = _teams[_currentTeamIndex];
     final flashColor = _feedbackTicks > 0
-        ? (_lastWasCorrect
-            ? const Color(0xFF43A047)
-            : const Color(0xFFE53935))
+        ? (_lastWasCorrect ? const Color(0xFF43A047) : const Color(0xFFE53935))
         : null;
     return GestureDetector(
       onHorizontalDragEnd: (d) {
@@ -550,105 +642,129 @@ class _HeadsUpScreenState extends State<HeadsUpScreen> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         color: flashColor ?? GameTheme.background,
-        child: Column(children: [
-          // Top bar: timer + team badge
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-            child: Row(children: [
-              Container(
-                width: 14,
-                height: 14,
-                decoration: BoxDecoration(
-                    color: team.color, shape: BoxShape.circle),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(team.name,
-                    style: const TextStyle(
+        child: Column(
+          children: [
+            // Top bar: timer + team badge
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: Row(
+                children: [
+                  Container(
+                    width: 14,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: team.color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      team.name,
+                      style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: GameTheme.textPrimary),
-                    overflow: TextOverflow.ellipsis),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 6),
-                decoration: BoxDecoration(
-                  color: _timeLeft <= 10
-                      ? GameTheme.accentAlt
-                      : GameTheme.surface,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(_formatTime(_timeLeft),
-                    style: const TextStyle(
+                        color: GameTheme.textPrimary,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _timeLeft <= 10
+                          ? GameTheme.accentAlt
+                          : GameTheme.surface,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      _formatTime(_timeLeft),
+                      style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
-                        color: Colors.white)),
-              ),
-              const SizedBox(width: 12),
-              Text('✓ $_roundCorrect   ✗ $_roundSkipped',
-                  style: const TextStyle(
-                      fontSize: 13, color: GameTheme.textSecondary)),
-            ]),
-          ),
-          // Word area — fills most of the screen. FittedBox scales a single
-          // line so long words (Brochevarevarura) stay one line and multi-word
-          // titles (Dilwale Dulhania Le Jayenge) wrap at spaces, then shrink.
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Center(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    _currentWord,
-                    textAlign: TextAlign.center,
-                    maxLines: 3,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    '✓ $_roundCorrect   ✗ $_roundSkipped',
                     style: const TextStyle(
-                      fontSize: 140,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                      height: 1.1,
+                      fontSize: 13,
+                      color: GameTheme.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Word area — fills most of the screen. FittedBox scales a single
+            // line so long words (Brochevarevarura) stay one line and multi-word
+            // titles (Dilwale Dulhania Le Jayenge) wrap at spaces, then shrink.
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Center(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      _currentWord,
+                      textAlign: TextAlign.center,
+                      maxLines: 3,
+                      style: const TextStyle(
+                        fontSize: 140,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        height: 1.1,
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-          // Big correct / skip buttons — also activated by swipes
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 4, 12, 16),
-            child: Row(children: [
-              Expanded(
-                child: _playButton(
-                  label: 'SKIP',
-                  icon: Icons.close_rounded,
-                  color: const Color(0xFFE53935),
-                  onTap: _markSkip,
-                ),
+            // Big correct / skip buttons — also activated by swipes
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 4, 12, 16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _playButton(
+                      label: 'SKIP',
+                      icon: Icons.close_rounded,
+                      color: const Color(0xFFE53935),
+                      onTap: _markSkip,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    flex: 2,
+                    child: _playButton(
+                      label: 'CORRECT',
+                      icon: Icons.check_rounded,
+                      color: const Color(0xFF43A047),
+                      onTap: _markCorrect,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                flex: 2,
-                child: _playButton(
-                  label: 'CORRECT',
-                  icon: Icons.check_rounded,
-                  color: const Color(0xFF43A047),
-                  onTap: _markCorrect,
-                ),
-              ),
-            ]),
-          ),
-        ]),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _playButton(
-      {required String label,
-      required IconData icon,
-      required Color color,
-      required VoidCallback onTap}) {
+  Widget _playButton({
+    required String label,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -662,12 +778,15 @@ class _HeadsUpScreenState extends State<HeadsUpScreen> {
           children: [
             Icon(icon, color: Colors.white, size: 28),
             const SizedBox(width: 8),
-            Text(label,
-                style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                    letterSpacing: 1.2)),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                letterSpacing: 1.2,
+              ),
+            ),
           ],
         ),
       ),
@@ -695,19 +814,29 @@ class _HeadsUpScreenState extends State<HeadsUpScreen> {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                  color: team.color, shape: BoxShape.circle),
-              child: const Icon(Icons.flag_rounded,
-                  color: Colors.white, size: 40),
+                color: team.color,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.flag_rounded,
+                color: Colors.white,
+                size: 40,
+              ),
             ),
             const SizedBox(height: 14),
-            Text('${team.name} • $_roundCorrect correct',
-                style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: GameTheme.textPrimary)),
+            Text(
+              '${team.name} • $_roundCorrect correct',
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: GameTheme.textPrimary,
+              ),
+            ),
             const SizedBox(height: 4),
-            Text('Skipped: $_roundSkipped',
-                style: const TextStyle(color: GameTheme.textSecondary)),
+            Text(
+              'Skipped: $_roundSkipped',
+              style: const TextStyle(color: GameTheme.textSecondary),
+            ),
             const SizedBox(height: 20),
             _scoreboard(),
             const SizedBox(height: 28),
@@ -719,13 +848,17 @@ class _HeadsUpScreenState extends State<HeadsUpScreen> {
                   backgroundColor: GameTheme.accent,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-                child: const Text('Pass to next team',
-                    style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white)),
+                child: const Text(
+                  'Pass to next team',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
               ),
             ),
           ],
@@ -744,33 +877,48 @@ class _HeadsUpScreenState extends State<HeadsUpScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.emoji_events_rounded,
-                color: GameTheme.gold, size: 72),
+            const Icon(
+              Icons.emoji_events_rounded,
+              color: GameTheme.gold,
+              size: 72,
+            ),
             const SizedBox(height: 12),
-            Text('${winner.name} wins!',
-                style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w800,
-                    color: winner.color)),
+            Text(
+              '${winner.name} wins!',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w800,
+                color: winner.color,
+              ),
+            ),
             const SizedBox(height: 16),
             _scoreboard(),
             const SizedBox(height: 28),
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              OutlinedButton(
-                onPressed: _resetMatch,
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: GameTheme.accent),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 20, vertical: 14),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-                child: const Text('New match',
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                OutlinedButton(
+                  onPressed: _resetMatch,
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: GameTheme.accent),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 14,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'New match',
                     style: TextStyle(
-                        color: GameTheme.accent,
-                        fontWeight: FontWeight.w700)),
-              ),
-            ]),
+                      color: GameTheme.accent,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -784,34 +932,43 @@ class _HeadsUpScreenState extends State<HeadsUpScreen> {
         for (final t in sorted)
           Container(
             margin: const EdgeInsets.only(bottom: 6),
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
               color: GameTheme.surface,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Row(children: [
-              Container(
-                width: 14,
-                height: 14,
-                decoration: BoxDecoration(
-                    color: t.color, shape: BoxShape.circle),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(t.name,
+            child: Row(
+              children: [
+                Container(
+                  width: 14,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: t.color,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    t.name,
                     style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: GameTheme.textPrimary),
-                    overflow: TextOverflow.ellipsis),
-              ),
-              Text('${t.score}',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: GameTheme.textPrimary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Text(
+                  '${t.score}',
                   style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: GameTheme.textPrimary)),
-            ]),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: GameTheme.textPrimary,
+                  ),
+                ),
+              ],
+            ),
           ),
       ],
     );

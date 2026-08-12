@@ -32,7 +32,9 @@ class WifiGameService {
   /// Host a game — creates a TCP server on a random port
   Future<bool> host(String playerName) async {
     try {
-      final interfaces = await NetworkInterface.list(type: InternetAddressType.IPv4);
+      final interfaces = await NetworkInterface.list(
+        type: InternetAddressType.IPv4,
+      );
       if (interfaces.isEmpty) {
         onError?.call('No WiFi connection found');
         return false;
@@ -77,7 +79,9 @@ class WifiGameService {
   /// Join a game — connects to host via room code (port)
   Future<bool> join(String code, String playerName) async {
     try {
-      final interfaces = await NetworkInterface.list(type: InternetAddressType.IPv4);
+      final interfaces = await NetworkInterface.list(
+        type: InternetAddressType.IPv4,
+      );
       if (interfaces.isEmpty) {
         onError?.call('No WiFi connection found');
         return false;
@@ -96,8 +100,18 @@ class WifiGameService {
       final futures = <Future>[];
       for (int i = 1; i <= 255; i++) {
         futures.add(
-          Socket.connect('$subnet.$i', port, timeout: const Duration(milliseconds: 150))
-              .then((s) { socket ??= s; })
+          Socket.connect(
+                '$subnet.$i',
+                port,
+                timeout: const Duration(milliseconds: 150),
+              )
+              .then((s) {
+                if (socket == null) {
+                  socket = s;
+                } else {
+                  s.destroy();
+                }
+              })
               .catchError((_) {}),
         );
       }

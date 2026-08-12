@@ -27,11 +27,13 @@ class _DotsBoxesScreenState extends State<DotsBoxesScreen> {
   bool _isWifiGame = false;
   bool _showWifiLobby = false;
   bool _aiThinking = false;
+  int _gameGeneration = 0;
 
   // Lines: horizontal[row][col] and vertical[row][col]
   late List<List<bool>> _hLines; // _gridSize rows x (_gridSize-1) cols
   late List<List<bool>> _vLines; // (_gridSize-1) rows x _gridSize cols
-  late List<List<int>> _boxes;   // (_gridSize-1) x (_gridSize-1), 0=none, 1=p1, 2=p2
+  late List<List<int>>
+  _boxes; // (_gridSize-1) x (_gridSize-1), 0=none, 1=p1, 2=p2
   int _turn = 1; // 1 or 2
   int _p1Score = 0, _p2Score = 0;
   bool _gameOver = false;
@@ -44,14 +46,28 @@ class _DotsBoxesScreenState extends State<DotsBoxesScreen> {
   }
 
   void _initGame() {
-    _hLines = List.generate(_gridSize, (_) => List.filled(_gridSize - 1, false));
-    _vLines = List.generate(_gridSize - 1, (_) => List.filled(_gridSize, false));
+    _gameGeneration++;
+    _hLines = List.generate(
+      _gridSize,
+      (_) => List.filled(_gridSize - 1, false),
+    );
+    _vLines = List.generate(
+      _gridSize - 1,
+      (_) => List.filled(_gridSize, false),
+    );
     _boxes = List.generate(_gridSize - 1, (_) => List.filled(_gridSize - 1, 0));
-    _turn = 1; _p1Score = 0; _p2Score = 0; _gameOver = false; _aiThinking = false;
+    _turn = 1;
+    _p1Score = 0;
+    _p2Score = 0;
+    _gameOver = false;
+    _aiThinking = false;
   }
 
   void _startGame(bool vsAI) {
-    _initGame(); _vsAI = vsAI; _mode = DBMode.playing; setState(() {});
+    _initGame();
+    _vsAI = vsAI;
+    _mode = DBMode.playing;
+    setState(() {});
   }
 
   void _drawHLine(int row, int col) {
@@ -107,10 +123,16 @@ class _DotsBoxesScreenState extends State<DotsBoxesScreen> {
     for (int r = 0; r < _gridSize - 1; r++) {
       for (int c = 0; c < _gridSize - 1; c++) {
         if (_boxes[r][c] == 0 &&
-            _hLines[r][c] && _hLines[r + 1][c] &&
-            _vLines[r][c] && _vLines[r][c + 1]) {
+            _hLines[r][c] &&
+            _hLines[r + 1][c] &&
+            _vLines[r][c] &&
+            _vLines[r][c + 1]) {
           _boxes[r][c] = _turn;
-          if (_turn == 1) _p1Score++; else _p2Score++;
+          if (_turn == 1) {
+            _p1Score++;
+          } else {
+            _p2Score++;
+          }
           scored = true;
           HapticFeedback.heavyImpact();
         }
@@ -120,13 +142,22 @@ class _DotsBoxesScreenState extends State<DotsBoxesScreen> {
   }
 
   void _checkGameOver() {
-    if (_p1Score + _p2Score >= (_gridSize - 1) * (_gridSize - 1)) _gameOver = true;
+    if (_p1Score + _p2Score >= (_gridSize - 1) * (_gridSize - 1)) {
+      _gameOver = true;
+    }
   }
 
   void _scheduleAI() {
-    _aiThinking = true; setState(() {});
+    final generation = _gameGeneration;
+    _aiThinking = true;
+    setState(() {});
     Future.delayed(const Duration(milliseconds: 400), () {
-      if (!mounted || _gameOver) return;
+      if (!mounted ||
+          generation != _gameGeneration ||
+          _gameOver ||
+          _mode != DBMode.playing) {
+        return;
+      }
       _aiMove();
       _aiThinking = false;
       if (mounted) setState(() {});
@@ -144,10 +175,22 @@ class _DotsBoxesScreenState extends State<DotsBoxesScreen> {
         if (_vLines[r][c]) sides++;
         if (_vLines[r][c + 1]) sides++;
         if (sides == 3) {
-          if (!_hLines[r][c]) { _placeHLine(r, c); return; }
-          if (!_hLines[r + 1][c]) { _placeHLine(r + 1, c); return; }
-          if (!_vLines[r][c]) { _placeVLine(r, c); return; }
-          if (!_vLines[r][c + 1]) { _placeVLine(r, c + 1); return; }
+          if (!_hLines[r][c]) {
+            _placeHLine(r, c);
+            return;
+          }
+          if (!_hLines[r + 1][c]) {
+            _placeHLine(r + 1, c);
+            return;
+          }
+          if (!_vLines[r][c]) {
+            _placeVLine(r, c);
+            return;
+          }
+          if (!_vLines[r][c + 1]) {
+            _placeVLine(r, c + 1);
+            return;
+          }
         }
       }
     }
@@ -169,18 +212,28 @@ class _DotsBoxesScreenState extends State<DotsBoxesScreen> {
     }
     if (safe.isNotEmpty) {
       final pick = safe[_rng.nextInt(safe.length)];
-      if (pick.$1) _placeHLine(pick.$2, pick.$3); else _placeVLine(pick.$2, pick.$3);
+      if (pick.$1) {
+        _placeHLine(pick.$2, pick.$3);
+      } else {
+        _placeVLine(pick.$2, pick.$3);
+      }
       return;
     }
     // Forced to give a box — pick any
     for (int r = 0; r < _gridSize; r++) {
       for (int c = 0; c < _gridSize - 1; c++) {
-        if (!_hLines[r][c]) { _placeHLine(r, c); return; }
+        if (!_hLines[r][c]) {
+          _placeHLine(r, c);
+          return;
+        }
       }
     }
     for (int r = 0; r < _gridSize - 1; r++) {
       for (int c = 0; c < _gridSize; c++) {
-        if (!_vLines[r][c]) { _placeVLine(r, c); return; }
+        if (!_vLines[r][c]) {
+          _placeVLine(r, c);
+          return;
+        }
       }
     }
   }
@@ -253,7 +306,11 @@ class _DotsBoxesScreenState extends State<DotsBoxesScreen> {
       _isWifiGame = false;
       setState(() => _mode = DBMode.menu);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Opponent disconnected'), backgroundColor: GameTheme.accentAlt));
+        const SnackBar(
+          content: Text('Opponent disconnected'),
+          backgroundColor: GameTheme.accentAlt,
+        ),
+      );
     };
 
     setState(() {});
@@ -267,7 +324,8 @@ class _DotsBoxesScreenState extends State<DotsBoxesScreen> {
 
   // WiFi: host is player 1, client is player 2
   int get _localPlayer => (_isWifiGame && _wifiService != null)
-      ? (_wifiService!.isHost ? 1 : 2) : 0;
+      ? (_wifiService!.isHost ? 1 : 2)
+      : 0;
 
   @override
   Widget build(BuildContext context) {
@@ -286,123 +344,343 @@ class _DotsBoxesScreenState extends State<DotsBoxesScreen> {
   Widget _buildMenu() {
     return Scaffold(
       backgroundColor: GameTheme.background,
-      appBar: AppBar(title: const Text('Dots & Boxes'), leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_rounded, color: GameTheme.textPrimary),
-        onPressed: () => Navigator.pop(context)),
+      appBar: AppBar(
+        title: const Text('Dots & Boxes'),
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_rounded,
+            color: GameTheme.textPrimary,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.help_outline_rounded, color: GameTheme.accent),
+            icon: const Icon(
+              Icons.help_outline_rounded,
+              color: GameTheme.accent,
+            ),
             onPressed: () => GameHelp.show(context, 'Dots & Boxes'),
           ),
-        ]),
-      body: Center(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Icon(Icons.grid_4x4_rounded, size: 56, color: GameTheme.accent),
-          const SizedBox(height: 8),
-          const Text('Dots & Boxes', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: GameTheme.textPrimary)),
-          const SizedBox(height: 32),
-          _menuBtn(Icons.smart_toy_rounded, '1 Player', 'vs AI', () => _startGame(true)),
-          const SizedBox(height: 12),
-          _menuBtn(Icons.people_rounded, '2 Players', 'Local', () => _startGame(false)),
-          const SizedBox(height: 12),
-          _menuBtn(Icons.wifi_rounded, 'WiFi Multiplayer', 'Play over WiFi', () => setState(() => _showWifiLobby = true)),
-        ]))));
+        ],
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.grid_4x4_rounded, size: 56, color: GameTheme.accent),
+              const SizedBox(height: 8),
+              const Text(
+                'Dots & Boxes',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                  color: GameTheme.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 32),
+              _menuBtn(
+                Icons.smart_toy_rounded,
+                '1 Player',
+                'vs AI',
+                () => _startGame(true),
+              ),
+              const SizedBox(height: 12),
+              _menuBtn(
+                Icons.people_rounded,
+                '2 Players',
+                'Local',
+                () => _startGame(false),
+              ),
+              const SizedBox(height: 12),
+              _menuBtn(
+                Icons.wifi_rounded,
+                'WiFi Multiplayer',
+                'Play over WiFi',
+                () => setState(() => _showWifiLobby = true),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _menuBtn(IconData icon, String label, String sub, VoidCallback onTap) {
-    return GestureDetector(onTap: () { HapticFeedback.lightImpact(); onTap(); },
-      child: Container(width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
-        decoration: BoxDecoration(color: GameTheme.surface, borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: GameTheme.border)),
-        child: Row(children: [Icon(icon, color: GameTheme.accent, size: 26), const SizedBox(width: 16),
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(label, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: GameTheme.textPrimary)),
-            Text(sub, style: const TextStyle(fontSize: 12, color: GameTheme.textSecondary))]),
-          const Spacer(), const Icon(Icons.arrow_forward_ios_rounded, color: GameTheme.textSecondary, size: 16)])));
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+        decoration: BoxDecoration(
+          color: GameTheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: GameTheme.border),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: GameTheme.accent, size: 26),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: GameTheme.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    sub,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: GameTheme.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: GameTheme.textSecondary,
+              size: 16,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildGame() {
     return Scaffold(
       backgroundColor: GameTheme.background,
-      appBar: AppBar(title: Text(_isWifiGame ? 'Dots & Boxes — WiFi' : 'Dots & Boxes'),
-        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_rounded, color: GameTheme.textPrimary),
-          onPressed: () { _disposeWifi(); setState(() => _mode = DBMode.menu); }),
-        actions: [IconButton(icon: const Icon(Icons.refresh_rounded, color: GameTheme.accent),
-          onPressed: () { _initGame(); setState(() {}); })]),
-      body: SafeArea(child: LayoutBuilder(builder: (context, constraints) {
-        final boardSize = min(constraints.maxWidth - 32, constraints.maxHeight - 180);
-        final gap = boardSize / _gridSize;
-        final gridWidth = (_gridSize - 1) * gap;
-        final offsetX = (boardSize - gridWidth) / 2;
-        final offsetY = (boardSize - gridWidth) / 2;
+      appBar: AppBar(
+        title: Text(_isWifiGame ? 'Dots & Boxes — WiFi' : 'Dots & Boxes'),
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_rounded,
+            color: GameTheme.textPrimary,
+          ),
+          onPressed: () {
+            _disposeWifi();
+            setState(() => _mode = DBMode.menu);
+          },
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded, color: GameTheme.accent),
+            onPressed: () {
+              _initGame();
+              setState(() {});
+            },
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final boardSize = min(
+              constraints.maxWidth - 32,
+              constraints.maxHeight - 180,
+            );
+            final gap = boardSize / _gridSize;
+            final gridWidth = (_gridSize - 1) * gap;
+            final offsetX = (boardSize - gridWidth) / 2;
+            final offsetY = (boardSize - gridWidth) / 2;
 
-        return Column(children: [
-          // Scores
-          Padding(padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 24),
-            child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-              _scoreChip('Player 1', _p1Score, _p1Color, _turn == 1),
-              _scoreChip(_vsAI ? 'AI' : 'Player 2', _p2Score, _p2Color, _turn == 2)])),
+            return Column(
+              children: [
+                // Scores
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 24,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _scoreChip('Player 1', _p1Score, _p1Color, _turn == 1),
+                      _scoreChip(
+                        _vsAI ? 'AI' : 'Player 2',
+                        _p2Score,
+                        _p2Color,
+                        _turn == 2,
+                      ),
+                    ],
+                  ),
+                ),
 
-          if (_gameOver) Padding(padding: const EdgeInsets.only(top: 8),
-            child: Text(_p1Score > _p2Score ? 'Player 1 wins!' : _p2Score > _p1Score ? '${_vsAI ? "AI" : "Player 2"} wins!' : 'Draw!',
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: GameTheme.gold))),
+                if (_gameOver)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      _p1Score > _p2Score
+                          ? 'Player 1 wins!'
+                          : _p2Score > _p1Score
+                          ? '${_vsAI ? "AI" : "Player 2"} wins!'
+                          : 'Draw!',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: GameTheme.gold,
+                      ),
+                    ),
+                  ),
 
-          const Spacer(),
+                const Spacer(),
 
-          // Board — centered
-          Center(child: SizedBox(width: boardSize, height: boardSize,
-            child: CustomPaint(
-              painter: _DBBoardPainter(
-                gridSize: _gridSize, hLines: _hLines, vLines: _vLines,
-                boxes: _boxes, p1Color: _p1Color, p2Color: _p2Color),
-              child: Stack(children: [
-                // Horizontal line tap targets
-                for (int r = 0; r < _gridSize; r++)
-                  for (int c = 0; c < _gridSize - 1; c++)
-                    Positioned(
-                      left: offsetX + (c + 0.5) * gap - gap * 0.3, top: offsetY + r * gap - 10, width: gap * 0.6, height: 20,
-                      child: GestureDetector(onTap: () => _drawHLine(r, c),
-                        child: Container(color: Colors.transparent))),
-                // Vertical line tap targets
-                for (int r = 0; r < _gridSize - 1; r++)
-                  for (int c = 0; c < _gridSize; c++)
-                    Positioned(
-                      left: offsetX + c * gap - 10, top: offsetY + (r + 0.5) * gap - gap * 0.3, width: 20, height: gap * 0.6,
-                      child: GestureDetector(onTap: () => _drawVLine(r, c),
-                        child: Container(color: Colors.transparent))),
-              ])))),
+                // Board — centered
+                Center(
+                  child: SizedBox(
+                    width: boardSize,
+                    height: boardSize,
+                    child: CustomPaint(
+                      painter: _DBBoardPainter(
+                        gridSize: _gridSize,
+                        hLines: _hLines,
+                        vLines: _vLines,
+                        boxes: _boxes,
+                        p1Color: _p1Color,
+                        p2Color: _p2Color,
+                      ),
+                      child: Stack(
+                        children: [
+                          // Horizontal line tap targets
+                          for (int r = 0; r < _gridSize; r++)
+                            for (int c = 0; c < _gridSize - 1; c++)
+                              Positioned(
+                                left: offsetX + (c + 0.5) * gap - gap * 0.3,
+                                top: offsetY + r * gap - 10,
+                                width: gap * 0.6,
+                                height: 20,
+                                child: GestureDetector(
+                                  onTap: () => _drawHLine(r, c),
+                                  child: Container(color: Colors.transparent),
+                                ),
+                              ),
+                          // Vertical line tap targets
+                          for (int r = 0; r < _gridSize - 1; r++)
+                            for (int c = 0; c < _gridSize; c++)
+                              Positioned(
+                                left: offsetX + c * gap - 10,
+                                top: offsetY + (r + 0.5) * gap - gap * 0.3,
+                                width: 20,
+                                height: gap * 0.6,
+                                child: GestureDetector(
+                                  onTap: () => _drawVLine(r, c),
+                                  child: Container(color: Colors.transparent),
+                                ),
+                              ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
 
-          const Spacer(),
+                const Spacer(),
 
-          if (_gameOver) Padding(padding: const EdgeInsets.only(bottom: 24),
-            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              ElevatedButton(onPressed: () { _initGame(); setState(() {}); },
-                style: ElevatedButton.styleFrom(backgroundColor: GameTheme.accent,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                child: const Text('Rematch', style: TextStyle(fontWeight: FontWeight.w700, color: Colors.white))),
-              const SizedBox(width: 12),
-              OutlinedButton(onPressed: () => setState(() => _mode = DBMode.menu),
-                style: OutlinedButton.styleFrom(side: const BorderSide(color: GameTheme.accent),
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                child: const Text('Menu', style: TextStyle(fontWeight: FontWeight.w700, color: GameTheme.accent)))])),
+                if (_gameOver)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 24),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () {
+                            _initGame();
+                            setState(() {});
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: GameTheme.accent,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            'Rematch',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        OutlinedButton(
+                          onPressed: () => setState(() => _mode = DBMode.menu),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: GameTheme.accent),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            'Menu',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: GameTheme.accent,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
-          const SizedBox(height: 16),
-        ]);
-      })),
+                const SizedBox(height: 16),
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
 
   Widget _scoreChip(String label, int score, Color color, bool active) {
-    return Container(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       decoration: BoxDecoration(
         color: active ? color.withValues(alpha: 0.15) : GameTheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: active ? color : GameTheme.border, width: active ? 2 : 1)),
-      child: Column(children: [
-        Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: active ? color : GameTheme.textSecondary)),
-        Text('$score', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: active ? color : GameTheme.textPrimary))]));
+        border: Border.all(
+          color: active ? color : GameTheme.border,
+          width: active ? 2 : 1,
+        ),
+      ),
+      child: Column(
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: active ? color : GameTheme.textSecondary,
+            ),
+          ),
+          Text(
+            '$score',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+              color: active ? color : GameTheme.textPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -412,8 +690,14 @@ class _DBBoardPainter extends CustomPainter {
   final List<List<int>> boxes;
   final Color p1Color, p2Color;
 
-  _DBBoardPainter({required this.gridSize, required this.hLines, required this.vLines,
-    required this.boxes, required this.p1Color, required this.p2Color});
+  _DBBoardPainter({
+    required this.gridSize,
+    required this.hLines,
+    required this.vLines,
+    required this.boxes,
+    required this.p1Color,
+    required this.p2Color,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -437,8 +721,14 @@ class _DBBoardPainter extends CustomPainter {
         if (boxes[r][c] != 0) {
           final color = boxes[r][c] == 1 ? p1Color : p2Color;
           canvas.drawRect(
-            Rect.fromLTWH(c * gap + dotR, r * gap + dotR, gap - dotR * 2, gap - dotR * 2),
-            Paint()..color = color.withValues(alpha: 0.2));
+            Rect.fromLTWH(
+              c * gap + dotR,
+              r * gap + dotR,
+              gap - dotR * 2,
+              gap - dotR * 2,
+            ),
+            Paint()..color = color.withValues(alpha: 0.2),
+          );
         }
       }
     }
@@ -450,7 +740,11 @@ class _DBBoardPainter extends CustomPainter {
           ..color = hLines[r][c] ? Colors.white : const Color(0xFF2A3A4A)
           ..strokeWidth = hLines[r][c] ? 4 : 1.5
           ..strokeCap = StrokeCap.round;
-        canvas.drawLine(Offset(c * gap, r * gap), Offset((c + 1) * gap, r * gap), paint);
+        canvas.drawLine(
+          Offset(c * gap, r * gap),
+          Offset((c + 1) * gap, r * gap),
+          paint,
+        );
       }
     }
 
@@ -461,7 +755,11 @@ class _DBBoardPainter extends CustomPainter {
           ..color = vLines[r][c] ? Colors.white : const Color(0xFF2A3A4A)
           ..strokeWidth = vLines[r][c] ? 4 : 1.5
           ..strokeCap = StrokeCap.round;
-        canvas.drawLine(Offset(c * gap, r * gap), Offset(c * gap, (r + 1) * gap), paint);
+        canvas.drawLine(
+          Offset(c * gap, r * gap),
+          Offset(c * gap, (r + 1) * gap),
+          paint,
+        );
       }
     }
 

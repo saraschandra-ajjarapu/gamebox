@@ -32,7 +32,7 @@ class AboutScreen extends StatelessWidget {
                           width: 96, height: 96, fit: BoxFit.cover),
                     ),
                     const SizedBox(height: 14),
-                    const Text('GameBox',
+                    const Text('Quirkade',
                         style: TextStyle(
                             fontSize: 32,
                             fontWeight: FontWeight.w800,
@@ -47,9 +47,9 @@ class AboutScreen extends StatelessWidget {
               ),
               const SizedBox(height: 28),
               _section(
-                title: 'What is GameBox?',
+                title: 'What is Quirkade?',
                 body:
-                    'GameBox is a collection of timeless games — all in one app, '
+                    'Quirkade is a collection of timeless games — all in one app, '
                     'all offline, all free to play. Think of it as a box you can '
                     'open anytime for a quick round of your favourites.',
               ),

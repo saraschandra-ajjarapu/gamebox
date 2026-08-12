@@ -15,19 +15,19 @@ class StackGameScreen extends StatefulWidget {
 }
 
 class _Block {
-  double x;      // left edge in table units [0, 1]
-  double width;  // in table units
+  double x; // left edge in table units [0, 1]
+  double width; // in table units
   _Block({required this.x, required this.width});
 }
 
 class _StackGameScreenState extends State<StackGameScreen>
     with SingleTickerProviderStateMixin {
   // All horizontal measurements in "table units" where 1.0 = full board width.
-  static const double _blockHeightPx = 44.0;       // chunkier tiers
-  static const double _blockTopDepthPx = 12.0;     // pseudo-3D top face
-  static const double _initialWidth = 0.42;        // narrower to start
+  static const double _blockHeightPx = 44.0; // chunkier tiers
+  static const double _blockTopDepthPx = 12.0; // pseudo-3D top face
+  static const double _initialWidth = 0.42; // narrower to start
   static const double _perfectTolerance = 0.006;
-  static const double _baseSpeed = 0.42;           // slower base pace
+  static const double _baseSpeed = 0.42; // slower base pace
 
   final List<_Block> _stack = [];
   _Block _current = _Block(x: 0.24, width: _initialWidth);
@@ -93,7 +93,10 @@ class _StackGameScreenState extends State<StackGameScreen>
       _lastTickTime = elapsed;
       return;
     }
-    final dt = ((elapsed - _lastTickTime).inMicroseconds / 1000000.0).clamp(0.0, 1 / 30);
+    final dt = ((elapsed - _lastTickTime).inMicroseconds / 1000000.0).clamp(
+      0.0,
+      1 / 30,
+    );
     _lastTickTime = elapsed;
 
     _currentX += _direction * _speed * dt;
@@ -120,14 +123,21 @@ class _StackGameScreenState extends State<StackGameScreen>
       HapticFeedback.heavyImpact();
       _gameOver = true;
       _ticker?.stop();
-      if (_score > _bestScore) { _bestScore = _score; _saveBest(); }
+      if (_score > _bestScore) {
+        _bestScore = _score;
+        _saveBest();
+      }
       setState(() {});
       final finalScore = _score;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         HighScoreDialog.submitIfQualifies(
-          context: context, gameId: 'stack', gameName: 'Stack',
-          score: finalScore, scoreLabel: 'Height');
+          context: context,
+          gameId: 'stack',
+          gameName: 'Stack',
+          score: finalScore,
+          scoreLabel: 'Height',
+        );
       });
       return;
     }
@@ -176,126 +186,221 @@ class _StackGameScreenState extends State<StackGameScreen>
       appBar: AppBar(
         title: const Text('Stack'),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded, color: GameTheme.textPrimary),
-          onPressed: () { _ticker?.stop(); Navigator.pop(context); },
+          icon: const Icon(
+            Icons.arrow_back_ios_rounded,
+            color: GameTheme.textPrimary,
+          ),
+          onPressed: () {
+            _ticker?.stop();
+            Navigator.pop(context);
+          },
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.help_outline_rounded, color: GameTheme.accent),
+            icon: const Icon(
+              Icons.help_outline_rounded,
+              color: GameTheme.accent,
+            ),
             onPressed: () => GameHelp.show(context, 'Stack'),
           ),
         ],
       ),
       body: SafeArea(
-        child: LayoutBuilder(builder: (context, constraints) {
-          // Play area fills the screen on tablets; phones stay portrait-tight.
-          final boardW = min(constraints.maxWidth - 24, 600.0);
-          final boardH = constraints.maxHeight - 60;
-          return Column(children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _stat('SCORE', '$_score'),
-                  if (_perfectStreak > 1)
-                    _stat('STREAK', '$_perfectStreak', color: const Color(0xFFFFD54F)),
-                  _stat('BEST', '$_bestScore'),
-                ],
-              ),
-            ),
-            Expanded(child: Center(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: _started && !_gameOver ? _drop : null,
-                child: SizedBox(
-                  width: boardW, height: boardH,
-                  child: Stack(children: [
-                    // Background grid line
-                    Positioned.fill(child: CustomPaint(
-                      painter: _TowerPainter(
-                        stack: _stack,
-                        current: _current,
-                        currentX: _currentX,
-                        boardW: boardW,
-                        boardH: boardH,
-                        blockHeight: _blockHeightPx,
-                        topDepth: _blockTopDepthPx,
-                        colorFn: _blockColor,
-                        started: _started,
-                        gameOver: _gameOver,
-                      ),
-                    )),
-
-                    if (_showPerfect)
-                      Center(child: Padding(
-                        padding: const EdgeInsets.only(top: 40),
-                        child: Text('PERFECT!',
-                          style: TextStyle(
-                            fontSize: 28, fontWeight: FontWeight.w900,
-                            color: const Color(0xFFFFD54F),
-                            letterSpacing: 2,
-                            shadows: [Shadow(color: const Color(0xFFFFD54F).withValues(alpha: 0.6), blurRadius: 12)],
-                          )),
-                      )),
-
-                    if (!_started || _gameOver)
-                      Positioned.fill(child: Center(child: Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: GameTheme.background.withValues(alpha: 0.94),
-                          borderRadius: BorderRadius.circular(18),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // Play area fills the screen on tablets; phones stay portrait-tight.
+            final boardW = min(constraints.maxWidth - 24, 600.0);
+            final boardH = constraints.maxHeight - 60;
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 8,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _stat('SCORE', '$_score'),
+                      if (_perfectStreak > 1)
+                        _stat(
+                          'STREAK',
+                          '$_perfectStreak',
+                          color: const Color(0xFFFFD54F),
                         ),
-                        child: Column(mainAxisSize: MainAxisSize.min, children: [
-                          Text(
-                            _gameOver ? 'Game Over' : 'Stack',
-                            style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800,
-                              color: _gameOver ? GameTheme.accentAlt : GameTheme.accent),
-                          ),
-                          if (_gameOver) ...[
-                            const SizedBox(height: 6),
-                            Text('Height: $_score',
-                              style: const TextStyle(color: GameTheme.textSecondary, fontSize: 14)),
-                          ],
-                          const SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: _startGame,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: GameTheme.accent,
-                              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
-                            ),
-                            child: Text(
-                              _gameOver ? 'Play Again' : 'Start',
-                              style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.white),
-                            ),
-                          ),
-                          if (!_started && !_gameOver) ...[
-                            const SizedBox(height: 10),
-                            const Text('Tap anywhere to drop the block',
-                              style: TextStyle(color: GameTheme.textSecondary, fontSize: 12)),
-                          ],
-                        ]),
-                      ))),
-                  ]),
+                      _stat('BEST', '$_bestScore'),
+                    ],
+                  ),
                 ),
-              ),
-            )),
-          ]);
-        }),
+                if (_started && !_gameOver)
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 4),
+                    child: Text(
+                      'Tap anywhere to drop · center it for PERFECT',
+                      style: TextStyle(
+                        color: GameTheme.textSecondary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                Expanded(
+                  child: Center(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: _started && !_gameOver ? _drop : null,
+                      child: SizedBox(
+                        width: boardW,
+                        height: boardH,
+                        child: Stack(
+                          children: [
+                            // Background grid line
+                            Positioned.fill(
+                              child: CustomPaint(
+                                painter: _TowerPainter(
+                                  stack: _stack,
+                                  current: _current,
+                                  currentX: _currentX,
+                                  boardW: boardW,
+                                  boardH: boardH,
+                                  blockHeight: _blockHeightPx,
+                                  topDepth: _blockTopDepthPx,
+                                  colorFn: _blockColor,
+                                  started: _started,
+                                  gameOver: _gameOver,
+                                ),
+                              ),
+                            ),
+
+                            if (_showPerfect)
+                              Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.only(top: 40),
+                                  child: Text(
+                                    'PERFECT!',
+                                    style: TextStyle(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.w900,
+                                      color: const Color(0xFFFFD54F),
+                                      letterSpacing: 2,
+                                      shadows: [
+                                        Shadow(
+                                          color: const Color(
+                                            0xFFFFD54F,
+                                          ).withValues(alpha: 0.6),
+                                          blurRadius: 12,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                            if (!_started || _gameOver)
+                              Positioned.fill(
+                                child: Center(
+                                  child: Container(
+                                    padding: const EdgeInsets.all(24),
+                                    decoration: BoxDecoration(
+                                      color: GameTheme.background.withValues(
+                                        alpha: 0.94,
+                                      ),
+                                      borderRadius: BorderRadius.circular(18),
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          _gameOver ? 'Game Over' : 'Stack',
+                                          style: TextStyle(
+                                            fontSize: 26,
+                                            fontWeight: FontWeight.w800,
+                                            color: _gameOver
+                                                ? GameTheme.accentAlt
+                                                : GameTheme.accent,
+                                          ),
+                                        ),
+                                        if (_gameOver) ...[
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            'Height: $_score',
+                                            style: const TextStyle(
+                                              color: GameTheme.textSecondary,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ],
+                                        const SizedBox(height: 16),
+                                        ElevatedButton(
+                                          onPressed: _startGame,
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: GameTheme.accent,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 28,
+                                              vertical: 12,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            _gameOver ? 'Play Again' : 'Start',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w700,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                        if (!_started && !_gameOver) ...[
+                                          const SizedBox(height: 10),
+                                          const Text(
+                                            'Tap anywhere to drop the block',
+                                            style: TextStyle(
+                                              color: GameTheme.textSecondary,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
 
   Widget _stat(String label, String value, {Color? color}) {
-    return Column(mainAxisSize: MainAxisSize.min, children: [
-      Text(label,
-        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700,
-          color: GameTheme.textSecondary, letterSpacing: 1.2)),
-      const SizedBox(height: 2),
-      Text(value,
-        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800,
-          color: color ?? GameTheme.accent)),
-    ]);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            color: GameTheme.textSecondary,
+            letterSpacing: 1.2,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+            color: color ?? GameTheme.accent,
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -327,10 +432,12 @@ class _TowerPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     // Soft night-sky background.
-    final bgPaint = Paint()..shader = LinearGradient(
-      begin: Alignment.topCenter, end: Alignment.bottomCenter,
-      colors: [const Color(0xFF0E1726), const Color(0xFF050A14)],
-    ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+    final bgPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [const Color(0xFF0E1726), const Color(0xFF050A14)],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), bgPaint);
 
     final total = stack.length;
@@ -338,15 +445,19 @@ class _TowerPainter extends CustomPainter {
     final bottomY = size.height - 90;
     const topAnchorY = 140.0;
     final naturalTopY = bottomY - (total - 1) * blockHeight;
-    final cameraOffset = naturalTopY < topAnchorY ? (topAnchorY - naturalTopY) : 0.0;
+    final cameraOffset = naturalTopY < topAnchorY
+        ? (topAnchorY - naturalTopY)
+        : 0.0;
 
     for (int i = 0; i < total; i++) {
       final block = stack[i];
       final y = bottomY - i * blockHeight + cameraOffset;
       if (y > size.height + blockHeight || y < -blockHeight * 2) continue;
       final rect = Rect.fromLTWH(
-        block.x * size.width, y,
-        block.width * size.width, blockHeight,
+        block.x * size.width,
+        y,
+        block.width * size.width,
+        blockHeight,
       );
       _drawBlock(canvas, rect, colorFn(i, total));
     }
@@ -355,8 +466,10 @@ class _TowerPainter extends CustomPainter {
     if (started && !gameOver) {
       final y = bottomY - total * blockHeight + cameraOffset;
       final rect = Rect.fromLTWH(
-        currentX * size.width, y,
-        current.width * size.width, blockHeight,
+        currentX * size.width,
+        y,
+        current.width * size.width,
+        blockHeight,
       );
       _drawBlock(canvas, rect, colorFn(total, total + 1), glow: true);
     }
@@ -379,10 +492,15 @@ class _TowerPainter extends CustomPainter {
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
       );
     }
-    canvas.drawRRect(front, Paint()..shader = LinearGradient(
-      begin: Alignment.topCenter, end: Alignment.bottomCenter,
-      colors: [color, color2],
-    ).createShader(rect));
+    canvas.drawRRect(
+      front,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [color, color2],
+        ).createShader(rect),
+    );
 
     // Top face as a parallelogram (slight right/up offset)
     final topPath = Path()
@@ -400,18 +518,25 @@ class _TowerPainter extends CustomPainter {
       ..lineTo(rect.right + depth * 0.5, rect.bottom - depth)
       ..lineTo(rect.right, rect.bottom)
       ..close();
-    canvas.drawPath(rightPath, Paint()..color = Color.lerp(color, Colors.black, 0.12)!);
+    canvas.drawPath(
+      rightPath,
+      Paint()..color = Color.lerp(color, Colors.black, 0.12)!,
+    );
 
     // Subtle darker outline on the front
-    canvas.drawRRect(front, Paint()
-      ..color = Color.lerp(color, Colors.black, 0.4)!.withValues(alpha: 0.7)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.8);
+    canvas.drawRRect(
+      front,
+      Paint()
+        ..color = Color.lerp(color, Colors.black, 0.4)!.withValues(alpha: 0.7)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.8,
+    );
   }
 
   @override
   bool shouldRepaint(_TowerPainter old) =>
       old.stack.length != stack.length ||
       old.currentX != currentX ||
-      old.started != started || old.gameOver != gameOver;
+      old.started != started ||
+      old.gameOver != gameOver;
 }

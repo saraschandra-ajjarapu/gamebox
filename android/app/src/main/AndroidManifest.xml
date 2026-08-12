@@ -2,9 +2,13 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <application
-        android:label="GameBox"
+        android:label="Quirkade"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <!-- Debug builds use Google's sample app ID; release builds use Quirkade's production ID. -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="${adMobAppId}" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

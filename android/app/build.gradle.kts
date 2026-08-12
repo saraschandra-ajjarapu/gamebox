@@ -1,5 +1,6 @@
 import java.util.Properties
 import java.io.FileInputStream
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     id("com.android.application")
@@ -15,7 +16,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.saraschandra.gamebox"
+    namespace = "com.buzzzcreations.quirkade"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -24,8 +25,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_11)
+        }
     }
 
     signingConfigs {
@@ -38,16 +41,21 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.saraschandra.gamebox"
+        applicationId = "com.buzzzcreations.quirkade"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders["adMobAppId"] = "ca-app-pub-3940256099942544~3347511713"
     }
 
     buildTypes {
+        debug {
+            manifestPlaceholders["adMobAppId"] = "ca-app-pub-3940256099942544~3347511713"
+        }
         release {
             signingConfig = signingConfigs.getByName("release")
+            manifestPlaceholders["adMobAppId"] = "ca-app-pub-3095968893828878~5238484383"
         }
     }
 }

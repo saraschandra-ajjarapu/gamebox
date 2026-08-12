@@ -96,12 +96,12 @@ class LeaderboardService {
     LeaderboardGame(id: 'snake_easy', name: 'Snake (Easy)', scoreLabel: 'Score'),
     LeaderboardGame(id: 'snake_normal', name: 'Snake (Normal)', scoreLabel: 'Score'),
     LeaderboardGame(id: 'snake_hard', name: 'Snake (Hard)', scoreLabel: 'Score'),
-    LeaderboardGame(id: 'tetris', name: 'Tetris', scoreLabel: 'Score'),
-    LeaderboardGame(id: 'pacman', name: 'Pac-Man', scoreLabel: 'Score'),
+    LeaderboardGame(id: 'tetris', name: 'Falling Blocks', scoreLabel: 'Score'),
+    LeaderboardGame(id: 'pacman', name: 'Maze Munch', scoreLabel: 'Score'),
     LeaderboardGame(id: 'stack', name: 'Stack', scoreLabel: 'Height'),
-    LeaderboardGame(id: 'simon', name: 'Simon Says', scoreLabel: 'Level'),
+    LeaderboardGame(id: 'simon', name: 'Color Recall', scoreLabel: 'Level'),
     LeaderboardGame(id: 'quiz', name: 'Quiz', scoreLabel: 'Score'),
-    LeaderboardGame(id: 'wordle', name: 'Wordle Streak', scoreLabel: 'Streak'),
+    LeaderboardGame(id: 'wordle', name: 'Five Letters Streak', scoreLabel: 'Streak'),
     LeaderboardGame(id: 'memory', name: 'Memory (fewest moves)', scoreLabel: 'Moves'),
   ];
 }

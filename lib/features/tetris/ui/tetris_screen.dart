@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/game_theme.dart';
 import '../../../core/utils/game_help.dart';
 import '../../../core/widgets/high_score_dialog.dart';
+import '../../../core/services/rewarded_ad_service.dart';
 
 class TetrisScreen extends StatefulWidget {
   const TetrisScreen({super.key});
@@ -23,53 +24,154 @@ class _Piece {
   int row;
   int col;
 
-  _Piece(this.typeIndex, this.rotations, {required this.row, required this.col});
+  _Piece(
+    this.typeIndex,
+    this.rotations, {
+    required this.row,
+    required this.col,
+  });
 
   List<List<int>> get shape => rotations[rotation % rotations.length];
-  int get colorIndex => typeIndex + 1; // board cells store color index; 0 = empty
+  int get colorIndex =>
+      typeIndex + 1; // board cells store color index; 0 = empty
 }
 
 // 7 classic tetromino shapes.
 const _tetrominoRotations = <List<List<List<int>>>>[
   // I
   [
-    [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],
-    [[0,0,1,0],[0,0,1,0],[0,0,1,0],[0,0,1,0]],
+    [
+      [0, 0, 0, 0],
+      [1, 1, 1, 1],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+    ],
+    [
+      [0, 0, 1, 0],
+      [0, 0, 1, 0],
+      [0, 0, 1, 0],
+      [0, 0, 1, 0],
+    ],
   ],
   // O
   [
-    [[0,1,1,0],[0,1,1,0],[0,0,0,0],[0,0,0,0]],
+    [
+      [0, 1, 1, 0],
+      [0, 1, 1, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+    ],
   ],
   // T
   [
-    [[0,1,0,0],[1,1,1,0],[0,0,0,0],[0,0,0,0]],
-    [[0,1,0,0],[0,1,1,0],[0,1,0,0],[0,0,0,0]],
-    [[0,0,0,0],[1,1,1,0],[0,1,0,0],[0,0,0,0]],
-    [[0,1,0,0],[1,1,0,0],[0,1,0,0],[0,0,0,0]],
+    [
+      [0, 1, 0, 0],
+      [1, 1, 1, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+    ],
+    [
+      [0, 1, 0, 0],
+      [0, 1, 1, 0],
+      [0, 1, 0, 0],
+      [0, 0, 0, 0],
+    ],
+    [
+      [0, 0, 0, 0],
+      [1, 1, 1, 0],
+      [0, 1, 0, 0],
+      [0, 0, 0, 0],
+    ],
+    [
+      [0, 1, 0, 0],
+      [1, 1, 0, 0],
+      [0, 1, 0, 0],
+      [0, 0, 0, 0],
+    ],
   ],
   // S
   [
-    [[0,1,1,0],[1,1,0,0],[0,0,0,0],[0,0,0,0]],
-    [[1,0,0,0],[1,1,0,0],[0,1,0,0],[0,0,0,0]],
+    [
+      [0, 1, 1, 0],
+      [1, 1, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+    ],
+    [
+      [1, 0, 0, 0],
+      [1, 1, 0, 0],
+      [0, 1, 0, 0],
+      [0, 0, 0, 0],
+    ],
   ],
   // Z
   [
-    [[1,1,0,0],[0,1,1,0],[0,0,0,0],[0,0,0,0]],
-    [[0,1,0,0],[1,1,0,0],[1,0,0,0],[0,0,0,0]],
+    [
+      [1, 1, 0, 0],
+      [0, 1, 1, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+    ],
+    [
+      [0, 1, 0, 0],
+      [1, 1, 0, 0],
+      [1, 0, 0, 0],
+      [0, 0, 0, 0],
+    ],
   ],
   // J
   [
-    [[1,0,0,0],[1,1,1,0],[0,0,0,0],[0,0,0,0]],
-    [[0,1,1,0],[0,1,0,0],[0,1,0,0],[0,0,0,0]],
-    [[0,0,0,0],[1,1,1,0],[0,0,1,0],[0,0,0,0]],
-    [[0,1,0,0],[0,1,0,0],[1,1,0,0],[0,0,0,0]],
+    [
+      [1, 0, 0, 0],
+      [1, 1, 1, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+    ],
+    [
+      [0, 1, 1, 0],
+      [0, 1, 0, 0],
+      [0, 1, 0, 0],
+      [0, 0, 0, 0],
+    ],
+    [
+      [0, 0, 0, 0],
+      [1, 1, 1, 0],
+      [0, 0, 1, 0],
+      [0, 0, 0, 0],
+    ],
+    [
+      [0, 1, 0, 0],
+      [0, 1, 0, 0],
+      [1, 1, 0, 0],
+      [0, 0, 0, 0],
+    ],
   ],
   // L
   [
-    [[0,0,1,0],[1,1,1,0],[0,0,0,0],[0,0,0,0]],
-    [[0,1,0,0],[0,1,0,0],[0,1,1,0],[0,0,0,0]],
-    [[0,0,0,0],[1,1,1,0],[1,0,0,0],[0,0,0,0]],
-    [[1,1,0,0],[0,1,0,0],[0,1,0,0],[0,0,0,0]],
+    [
+      [0, 0, 1, 0],
+      [1, 1, 1, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+    ],
+    [
+      [0, 1, 0, 0],
+      [0, 1, 0, 0],
+      [0, 1, 1, 0],
+      [0, 0, 0, 0],
+    ],
+    [
+      [0, 0, 0, 0],
+      [1, 1, 1, 0],
+      [1, 0, 0, 0],
+      [0, 0, 0, 0],
+    ],
+    [
+      [1, 1, 0, 0],
+      [0, 1, 0, 0],
+      [0, 1, 0, 0],
+      [0, 0, 0, 0],
+    ],
   ],
 ];
 
@@ -99,6 +201,7 @@ class _TetrisScreenState extends State<TetrisScreen> {
   int _level = 1;
   int _linesCleared = 0;
   bool _gameOver = false;
+  bool _usedRewardedContinue = false;
   bool _started = false;
   bool _paused = false;
   Timer? _timer;
@@ -152,6 +255,7 @@ class _TetrisScreenState extends State<TetrisScreen> {
     _level = 1;
     _linesCleared = 0;
     _gameOver = false;
+    _usedRewardedContinue = false;
     _started = true;
     _paused = false;
     _current = _spawn();
@@ -173,7 +277,8 @@ class _TetrisScreenState extends State<TetrisScreen> {
   }
 
   bool _collides(_Piece piece, {int? r, int? c, int? rot}) {
-    final shape = piece.rotations[(rot ?? piece.rotation) % piece.rotations.length];
+    final shape =
+        piece.rotations[(rot ?? piece.rotation) % piece.rotations.length];
     final baseR = r ?? piece.row;
     final baseC = c ?? piece.col;
     for (int i = 0; i < 4; i++) {
@@ -305,11 +410,36 @@ class _TetrisScreenState extends State<TetrisScreen> {
     }
     HapticFeedback.heavyImpact();
     setState(() {});
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      HighScoreDialog.submitIfQualifies(
-        context: context, gameId: 'tetris', gameName: 'Tetris', score: _score);
+  }
+
+  Future<void> _submitFinalScore() => HighScoreDialog.submitIfQualifies(
+    context: context,
+    gameId: 'tetris',
+    gameName: 'Falling Blocks',
+    score: _score,
+  );
+
+  Future<void> _finishAndRestart() async {
+    if (_gameOver) await _submitFinalScore();
+    if (mounted) _startGame();
+  }
+
+  Future<void> _watchAdAndContinue() async {
+    if (_usedRewardedContinue || !_gameOver) return;
+    final earned = await RewardedAdService.instance.show();
+    if (!mounted || !earned) return;
+    setState(() {
+      // Clear the danger zone, preserve score/level, and resume with one life.
+      for (var row = 0; row < 4; row++) {
+        _board[row] = List.filled(_cols, 0);
+      }
+      _current = _spawn();
+      _next ??= _spawn();
+      _gameOver = false;
+      _paused = false;
+      _usedRewardedContinue = true;
     });
+    _restartTimer();
   }
 
   // ── UI ──────────────────────────────────────────────────────────────────
@@ -321,11 +451,16 @@ class _TetrisScreenState extends State<TetrisScreen> {
 
   Widget _cell(Color color, double size, {bool ghost = false}) {
     if (color == Colors.transparent) {
-      return Container(width: size, height: size, margin: const EdgeInsets.all(0.5));
+      return Container(
+        width: size,
+        height: size,
+        margin: const EdgeInsets.all(0.5),
+      );
     }
     if (ghost) {
       return Container(
-        width: size, height: size,
+        width: size,
+        height: size,
         margin: const EdgeInsets.all(0.5),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.12),
@@ -340,11 +475,13 @@ class _TetrisScreenState extends State<TetrisScreen> {
     final shade = Color.lerp(color, Colors.black, 0.22)!;
     final border = Color.lerp(color, Colors.black, 0.35)!;
     return Container(
-      width: size, height: size,
+      width: size,
+      height: size,
       margin: const EdgeInsets.all(0.5),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topLeft, end: Alignment.bottomRight,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
           colors: [light, color, shade],
           stops: const [0.0, 0.55, 1.0],
         ),
@@ -367,7 +504,8 @@ class _TetrisScreenState extends State<TetrisScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 62, height: 62,
+        width: 62,
+        height: 62,
         decoration: BoxDecoration(
           color: GameTheme.surface,
           borderRadius: BorderRadius.circular(14),
@@ -385,8 +523,10 @@ class _TetrisScreenState extends State<TetrisScreen> {
     for (int i = 0; i < 4; i++) {
       for (int j = 0; j < 4; j++) {
         if (shape[i][j] != 0) {
-          minR = min(minR, i); maxR = max(maxR, i);
-          minC = min(minC, j); maxC = max(maxC, j);
+          minR = min(minR, i);
+          maxR = max(maxR, i);
+          minC = min(minC, j);
+          maxC = max(maxC, j);
         }
       }
     }
@@ -404,19 +544,23 @@ class _TetrisScreenState extends State<TetrisScreen> {
         height: h * cell,
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: List.generate(h, (i) => Row(
-            mainAxisSize: MainAxisSize.min,
-            children: List.generate(w, (j) {
-              final filled = shape[minR + i][minC + j] != 0;
-              return Container(
-                width: cell, height: cell,
-                decoration: BoxDecoration(
-                  color: filled ? color : Colors.transparent,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              );
-            }),
-          )),
+          children: List.generate(
+            h,
+            (i) => Row(
+              mainAxisSize: MainAxisSize.min,
+              children: List.generate(w, (j) {
+                final filled = shape[minR + i][minC + j] != 0;
+                return Container(
+                  width: cell,
+                  height: cell,
+                  decoration: BoxDecoration(
+                    color: filled ? color : Colors.transparent,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                );
+              }),
+            ),
+          ),
         ),
       ),
     );
@@ -427,214 +571,358 @@ class _TetrisScreenState extends State<TetrisScreen> {
     return Scaffold(
       backgroundColor: GameTheme.background,
       appBar: AppBar(
-        title: const Text('Tetris'),
+        title: const Text('Falling Blocks'),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded, color: GameTheme.textPrimary),
-          onPressed: () { _timer?.cancel(); Navigator.pop(context); },
+          icon: const Icon(
+            Icons.arrow_back_ios_rounded,
+            color: GameTheme.textPrimary,
+          ),
+          onPressed: () async {
+            _timer?.cancel();
+            if (_gameOver) await _submitFinalScore();
+            if (!context.mounted) return;
+            Navigator.pop(context);
+          },
         ),
         actions: [
           IconButton(
-            icon: Icon(_useDpad ? Icons.swipe_rounded : Icons.gamepad_rounded,
-              color: GameTheme.accent),
+            icon: Icon(
+              _useDpad ? Icons.swipe_rounded : Icons.gamepad_rounded,
+              color: GameTheme.accent,
+            ),
             tooltip: _useDpad ? 'Switch to Swipe' : 'Switch to D-Pad',
             onPressed: () => setState(() => _useDpad = !_useDpad),
           ),
           if (_started && !_gameOver)
             IconButton(
-              icon: Icon(_paused ? Icons.play_arrow_rounded : Icons.pause_rounded,
-                color: GameTheme.accent),
+              icon: Icon(
+                _paused ? Icons.play_arrow_rounded : Icons.pause_rounded,
+                color: GameTheme.accent,
+              ),
               onPressed: _togglePause,
             ),
           IconButton(
-            icon: const Icon(Icons.help_outline_rounded, color: GameTheme.accent),
-            onPressed: () => GameHelp.show(context, 'Tetris'),
+            icon: const Icon(
+              Icons.help_outline_rounded,
+              color: GameTheme.accent,
+            ),
+            onPressed: () => GameHelp.show(context, 'Falling Blocks'),
           ),
         ],
       ),
       body: SafeArea(
-        child: LayoutBuilder(builder: (context, constraints) {
-          final dpadH = _useDpad ? 88.0 : 0.0;
-          final availH = constraints.maxHeight - dpadH - 56;
-          // Use ~70% of width on tablets so the board is big without stretching absurdly.
-          final totalAvailW = constraints.maxWidth - 24;
-          final availW = min(totalAvailW, 640.0);
-          final previewReserve = availW >= 260 ? 80.0 : 0.0;
-          final boardAvailW = availW - previewReserve;
-          final cellByW = boardAvailW / _cols;
-          final cellByH = availH / _rows;
-          final cellSize = min(cellByW, cellByH);
-          final boardW = cellSize * _cols;
-          final boardH = cellSize * _rows;
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final dpadH = _useDpad ? 88.0 : 0.0;
+            final availH = constraints.maxHeight - dpadH - 56;
+            // Use ~70% of width on tablets so the board is big without stretching absurdly.
+            final totalAvailW = constraints.maxWidth - 24;
+            final availW = min(totalAvailW, 640.0);
+            final previewReserve = availW >= 260 ? 80.0 : 0.0;
+            final boardAvailW = availW - previewReserve;
+            final cellByW = boardAvailW / _cols;
+            final cellByH = availH / _rows;
+            final cellSize = min(cellByW, cellByH);
+            final boardW = cellSize * _cols;
+            final boardH = cellSize * _rows;
 
-          return Column(children: [
-            // Score bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _statBox('SCORE', '$_score'),
-                  _statBox('LINES', '$_linesCleared'),
-                  _statBox('LEVEL', '$_level'),
-                  _statBox('BEST', '$_bestScore'),
-                ],
-              ),
-            ),
+            return Column(
+              children: [
+                // Score bar
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _statBox('SCORE', '$_score'),
+                      _statBox('LINES', '$_linesCleared'),
+                      _statBox('LEVEL', '$_level'),
+                      _statBox('BEST', '$_bestScore'),
+                    ],
+                  ),
+                ),
 
-            // Board + next-piece preview
-            Expanded(child: Center(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  GestureDetector(
-                    onTap: _rotate,
-                    onPanStart: (d) => _swipeStart = d.localPosition,
-                    onPanUpdate: (d) {
-                      if (_swipeStart == null) return;
-                      final delta = d.localPosition - _swipeStart!;
-                      if (delta.distance < 18) return;
-                      if (delta.dx.abs() > delta.dy.abs()) {
-                        _moveH(delta.dx > 0 ? 1 : -1);
-                      } else {
-                        if (delta.dy > 0) {
-                          _softDrop();
-                        } else {
-                          _hardDrop();
-                        }
-                      }
-                      _swipeStart = d.localPosition;
-                    },
-                    child: Container(
-                      width: boardW, height: boardH,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0A1420),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: GameTheme.border, width: 1.5),
+                if (_started && !_gameOver && !_paused && !_useDpad)
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 4),
+                    child: Text(
+                      'Swipe to move or drop · tap to rotate',
+                      style: TextStyle(
+                        color: GameTheme.textSecondary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
                       ),
-                      child: Stack(children: [
-                        // Board cells
-                        for (int r = 0; r < _rows; r++)
-                          for (int c = 0; c < _cols; c++)
-                            if (_board[r][c] != 0)
-                              Positioned(
-                                left: c * cellSize,
-                                top: r * cellSize,
-                                child: _cell(_colorFor(_board[r][c]), cellSize),
-                              ),
-                        // Ghost (landing preview)
-                        if (_current != null && _started && !_gameOver)
-                          ..._pieceCells(_current!, cellSize,
-                            rowOverride: _ghostRow(_current!), ghost: true),
-                        // Current piece
-                        if (_current != null && _started && !_gameOver)
-                          ..._pieceCells(_current!, cellSize),
-
-                        // Start / game-over overlay
-                        if (!_started || _gameOver || _paused)
-                          Positioned.fill(child: Center(child: Container(
-                            padding: const EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              color: GameTheme.background.withValues(alpha: 0.92),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Column(mainAxisSize: MainAxisSize.min, children: [
-                              Text(
-                                _gameOver ? 'Game Over' : _paused ? 'Paused' : 'Tetris',
-                                style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800,
-                                  color: _gameOver ? GameTheme.accentAlt : GameTheme.accent),
-                              ),
-                              if (_gameOver) ...[
-                                const SizedBox(height: 6),
-                                Text('Score: $_score',
-                                  style: const TextStyle(color: GameTheme.textSecondary, fontSize: 14)),
-                              ],
-                              const SizedBox(height: 16),
-                              if (!_paused)
-                                ElevatedButton(
-                                  onPressed: _startGame,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: GameTheme.accent,
-                                    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
-                                  ),
-                                  child: Text(
-                                    _gameOver ? 'Play Again' : 'Start',
-                                    style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.white),
-                                  ),
-                                )
-                              else
-                                ElevatedButton(
-                                  onPressed: _togglePause,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: GameTheme.accent,
-                                    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
-                                  ),
-                                  child: const Text('Resume',
-                                    style: TextStyle(fontWeight: FontWeight.w700, color: Colors.white)),
-                                ),
-                              if (!_started && !_gameOver) ...[
-                                const SizedBox(height: 10),
-                                Text(_useDpad ? 'Use D-Pad to control' : 'Swipe to move · tap to rotate',
-                                  style: const TextStyle(color: GameTheme.textSecondary, fontSize: 12)),
-                              ],
-                            ]),
-                          ))),
-                      ]),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  // Next-piece sidebar
-                  if (previewReserve > 0)
-                    SizedBox(
-                      width: 72,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('NEXT',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700,
-                              color: GameTheme.textSecondary, letterSpacing: 1.5)),
-                          const SizedBox(height: 8),
-                          Container(
-                            width: 72, height: 72,
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: GameTheme.surface,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Center(child: _previewPiece(_next)),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-            )),
 
-            // D-Pad controls
-            if (_useDpad && _started && !_gameOver && !_paused)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _dpadButton(Icons.rotate_right_rounded, _rotate),
-                    _dpadButton(Icons.arrow_left_rounded, () => _moveH(-1)),
-                    _dpadButton(Icons.arrow_drop_down_rounded, _softDrop),
-                    _dpadButton(Icons.arrow_right_rounded, () => _moveH(1)),
-                    _dpadButton(Icons.vertical_align_bottom_rounded, _hardDrop),
-                  ],
+                // Board + next-piece preview
+                Expanded(
+                  child: Center(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        GestureDetector(
+                          onTap: _rotate,
+                          onPanStart: (d) => _swipeStart = d.localPosition,
+                          onPanUpdate: (d) {
+                            if (_swipeStart == null) return;
+                            final delta = d.localPosition - _swipeStart!;
+                            if (delta.distance < 18) return;
+                            if (delta.dx.abs() > delta.dy.abs()) {
+                              _moveH(delta.dx > 0 ? 1 : -1);
+                            } else {
+                              if (delta.dy > 0) {
+                                _softDrop();
+                              } else {
+                                _hardDrop();
+                              }
+                            }
+                            _swipeStart = d.localPosition;
+                          },
+                          child: Container(
+                            width: boardW,
+                            height: boardH,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0A1420),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: GameTheme.border,
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Stack(
+                              children: [
+                                // Board cells
+                                for (int r = 0; r < _rows; r++)
+                                  for (int c = 0; c < _cols; c++)
+                                    if (_board[r][c] != 0)
+                                      Positioned(
+                                        left: c * cellSize,
+                                        top: r * cellSize,
+                                        child: _cell(
+                                          _colorFor(_board[r][c]),
+                                          cellSize,
+                                        ),
+                                      ),
+                                // Ghost (landing preview)
+                                if (_current != null && _started && !_gameOver)
+                                  ..._pieceCells(
+                                    _current!,
+                                    cellSize,
+                                    rowOverride: _ghostRow(_current!),
+                                    ghost: true,
+                                  ),
+                                // Current piece
+                                if (_current != null && _started && !_gameOver)
+                                  ..._pieceCells(_current!, cellSize),
+
+                                // Start / game-over overlay
+                                if (!_started || _gameOver || _paused)
+                                  Positioned.fill(
+                                    child: Center(
+                                      child: Container(
+                                        padding: const EdgeInsets.all(24),
+                                        decoration: BoxDecoration(
+                                          color: GameTheme.background
+                                              .withValues(alpha: 0.92),
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                        ),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              _gameOver
+                                                  ? 'Game Over'
+                                                  : _paused
+                                                  ? 'Paused'
+                                                  : 'Falling Blocks',
+                                              style: TextStyle(
+                                                fontSize: 26,
+                                                fontWeight: FontWeight.w800,
+                                                color: _gameOver
+                                                    ? GameTheme.accentAlt
+                                                    : GameTheme.accent,
+                                              ),
+                                            ),
+                                            if (_gameOver) ...[
+                                              const SizedBox(height: 6),
+                                              Text(
+                                                'Score: $_score',
+                                                style: const TextStyle(
+                                                  color:
+                                                      GameTheme.textSecondary,
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                            ],
+                                            const SizedBox(height: 16),
+                                            if (!_paused)
+                                              ElevatedButton(
+                                                onPressed: _gameOver
+                                                    ? _finishAndRestart
+                                                    : _startGame,
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor:
+                                                      GameTheme.accent,
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 28,
+                                                        vertical: 12,
+                                                      ),
+                                                ),
+                                                child: Text(
+                                                  _gameOver
+                                                      ? 'Play Again'
+                                                      : 'Start',
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.w700,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                              )
+                                            else
+                                              ElevatedButton(
+                                                onPressed: _togglePause,
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor:
+                                                      GameTheme.accent,
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 28,
+                                                        vertical: 12,
+                                                      ),
+                                                ),
+                                                child: const Text(
+                                                  'Resume',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.w700,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                              ),
+                                            if (_gameOver &&
+                                                !_usedRewardedContinue) ...[
+                                              const SizedBox(height: 8),
+                                              ValueListenableBuilder<bool>(
+                                                valueListenable:
+                                                    RewardedAdService
+                                                        .instance
+                                                        .isReady,
+                                                builder: (context, ready, _) =>
+                                                    OutlinedButton.icon(
+                                                      onPressed: ready
+                                                          ? _watchAdAndContinue
+                                                          : null,
+                                                      icon: const Icon(
+                                                        Icons
+                                                            .ondemand_video_rounded,
+                                                      ),
+                                                      label: Text(
+                                                        ready
+                                                            ? 'Watch ad to continue'
+                                                            : 'Continue ad unavailable',
+                                                      ),
+                                                    ),
+                                              ),
+                                            ],
+                                            if (!_started && !_gameOver) ...[
+                                              const SizedBox(height: 10),
+                                              Text(
+                                                _useDpad
+                                                    ? 'Use D-Pad to control'
+                                                    : 'Swipe to move · tap to rotate',
+                                                style: const TextStyle(
+                                                  color:
+                                                      GameTheme.textSecondary,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        // Next-piece sidebar
+                        if (previewReserve > 0)
+                          SizedBox(
+                            width: 72,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'NEXT',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: GameTheme.textSecondary,
+                                    letterSpacing: 1.5,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Container(
+                                  width: 72,
+                                  height: 72,
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: GameTheme.surface,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Center(child: _previewPiece(_next)),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                 ),
-              )
-            else
-              const SizedBox(height: 12),
-          ]);
-        }),
+
+                // D-Pad controls
+                if (_useDpad && _started && !_gameOver && !_paused)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _dpadButton(Icons.rotate_right_rounded, _rotate),
+                        _dpadButton(Icons.arrow_left_rounded, () => _moveH(-1)),
+                        _dpadButton(Icons.arrow_drop_down_rounded, _softDrop),
+                        _dpadButton(Icons.arrow_right_rounded, () => _moveH(1)),
+                        _dpadButton(
+                          Icons.vertical_align_bottom_rounded,
+                          _hardDrop,
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  const SizedBox(height: 12),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
 
-  List<Widget> _pieceCells(_Piece p, double cellSize,
-      {int? rowOverride, bool ghost = false}) {
+  List<Widget> _pieceCells(
+    _Piece p,
+    double cellSize, {
+    int? rowOverride,
+    bool ghost = false,
+  }) {
     final widgets = <Widget>[];
     final shape = p.shape;
     final baseR = rowOverride ?? p.row;
@@ -645,11 +933,13 @@ class _TetrisScreenState extends State<TetrisScreen> {
         final nr = baseR + i;
         final nc = p.col + j;
         if (nr < 0 || nr >= _rows || nc < 0 || nc >= _cols) continue;
-        widgets.add(Positioned(
-          left: nc * cellSize,
-          top: nr * cellSize,
-          child: _cell(color, cellSize, ghost: ghost),
-        ));
+        widgets.add(
+          Positioned(
+            left: nc * cellSize,
+            top: nr * cellSize,
+            child: _cell(color, cellSize, ghost: ghost),
+          ),
+        );
       }
     }
     return widgets;
@@ -659,13 +949,24 @@ class _TetrisScreenState extends State<TetrisScreen> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(label,
-          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700,
-            color: GameTheme.textSecondary, letterSpacing: 1.2)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            color: GameTheme.textSecondary,
+            letterSpacing: 1.2,
+          ),
+        ),
         const SizedBox(height: 2),
-        Text(value,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800,
-            color: GameTheme.accent)),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+            color: GameTheme.accent,
+          ),
+        ),
       ],
     );
   }

@@ -7,6 +7,7 @@ import '../../../core/services/wifi_game_service.dart';
 import '../../../core/widgets/wifi_lobby.dart';
 
 enum TTTMode { menu, playing }
+
 enum TTTPlayer { x, o, none }
 
 class TicTacToeScreen extends StatefulWidget {
@@ -25,6 +26,7 @@ class _TicTacToeScreenState extends State<TicTacToeScreen>
   bool _gameOver = false;
   bool _vsAI = false;
   bool _aiThinking = false;
+  int _gameGeneration = 0;
   TTTPlayer _humanMark = TTTPlayer.x;
   int _xWins = 0;
   int _oWins = 0;
@@ -60,6 +62,7 @@ class _TicTacToeScreenState extends State<TicTacToeScreen>
   }
 
   void _initBoard() {
+    _gameGeneration++;
     _board = List.filled(9, TTTPlayer.none);
     _turn = TTTPlayer.x;
     _winner = TTTPlayer.none;
@@ -135,7 +138,7 @@ class _TicTacToeScreenState extends State<TicTacToeScreen>
     const lines = [
       [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
       [0, 3, 6], [1, 4, 7], [2, 5, 8], // cols
-      [0, 4, 8], [2, 4, 6],             // diags
+      [0, 4, 8], [2, 4, 6], // diags
     ];
 
     for (final line in lines) {
@@ -169,10 +172,16 @@ class _TicTacToeScreenState extends State<TicTacToeScreen>
   // ── AI ──────────────────────────────────────────────────────────────────
 
   void _scheduleAI() {
+    final generation = _gameGeneration;
     _aiThinking = true;
     setState(() {});
     Future.delayed(const Duration(milliseconds: 400), () {
-      if (!mounted || _gameOver) return;
+      if (!mounted ||
+          generation != _gameGeneration ||
+          _gameOver ||
+          _mode != TTTMode.playing) {
+        return;
+      }
       final move = _findAIMove();
       if (move != null) _placeMark(move);
       _aiThinking = false;
@@ -188,7 +197,10 @@ class _TicTacToeScreenState extends State<TicTacToeScreen>
     for (int i = 0; i < 9; i++) {
       if (_board[i] == TTTPlayer.none) {
         _board[i] = aiMark;
-        if (_wouldWin(aiMark)) { _board[i] = TTTPlayer.none; return i; }
+        if (_wouldWin(aiMark)) {
+          _board[i] = TTTPlayer.none;
+          return i;
+        }
         _board[i] = TTTPlayer.none;
       }
     }
@@ -196,7 +208,10 @@ class _TicTacToeScreenState extends State<TicTacToeScreen>
     for (int i = 0; i < 9; i++) {
       if (_board[i] == TTTPlayer.none) {
         _board[i] = humanMark;
-        if (_wouldWin(humanMark)) { _board[i] = TTTPlayer.none; return i; }
+        if (_wouldWin(humanMark)) {
+          _board[i] = TTTPlayer.none;
+          return i;
+        }
         _board[i] = TTTPlayer.none;
       }
     }
@@ -215,12 +230,19 @@ class _TicTacToeScreenState extends State<TicTacToeScreen>
 
   bool _wouldWin(TTTPlayer p) {
     const lines = [
-      [0, 1, 2], [3, 4, 5], [6, 7, 8],
-      [0, 3, 6], [1, 4, 7], [2, 5, 8],
-      [0, 4, 8], [2, 4, 6],
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8],
+      [0, 4, 8],
+      [2, 4, 6],
     ];
     for (final l in lines) {
-      if (_board[l[0]] == p && _board[l[1]] == p && _board[l[2]] == p) return true;
+      if (_board[l[0]] == p && _board[l[1]] == p && _board[l[2]] == p) {
+        return true;
+      }
     }
     return false;
   }
@@ -255,7 +277,11 @@ class _TicTacToeScreenState extends State<TicTacToeScreen>
       _isWifiGame = false;
       setState(() => _mode = TTTMode.menu);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Opponent disconnected'), backgroundColor: GameTheme.accentAlt));
+        const SnackBar(
+          content: Text('Opponent disconnected'),
+          backgroundColor: GameTheme.accentAlt,
+        ),
+      );
     };
 
     setState(() {});
@@ -287,12 +313,18 @@ class _TicTacToeScreenState extends State<TicTacToeScreen>
       appBar: AppBar(
         title: const Text('Tic Tac Toe'),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded, color: GameTheme.textPrimary),
+          icon: const Icon(
+            Icons.arrow_back_ios_rounded,
+            color: GameTheme.textPrimary,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.help_outline_rounded, color: GameTheme.accent),
+            icon: const Icon(
+              Icons.help_outline_rounded,
+              color: GameTheme.accent,
+            ),
             onPressed: () => GameHelp.show(context, 'Tic Tac Toe'),
           ),
         ],
@@ -307,11 +339,23 @@ class _TicTacToeScreenState extends State<TicTacToeScreen>
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('X', style: TextStyle(fontSize: 64, fontWeight: FontWeight.w900,
-                      color: const Color(0xFF4ECDC4))),
+                  Text(
+                    'X',
+                    style: TextStyle(
+                      fontSize: 64,
+                      fontWeight: FontWeight.w900,
+                      color: const Color(0xFF4ECDC4),
+                    ),
+                  ),
                   const SizedBox(width: 16),
-                  Text('O', style: TextStyle(fontSize: 64, fontWeight: FontWeight.w900,
-                      color: const Color(0xFFFF6B6B))),
+                  Text(
+                    'O',
+                    style: TextStyle(
+                      fontSize: 64,
+                      fontWeight: FontWeight.w900,
+                      color: const Color(0xFFFF6B6B),
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 32),
@@ -366,16 +410,33 @@ class _TicTacToeScreenState extends State<TicTacToeScreen>
           children: [
             Icon(icon, color: GameTheme.accent, size: 28),
             const SizedBox(width: 16),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700,
-                    color: GameTheme.textPrimary)),
-                Text(subtitle, style: const TextStyle(fontSize: 13, color: GameTheme.textSecondary)),
-              ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: GameTheme.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: GameTheme.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const Spacer(),
-            const Icon(Icons.arrow_forward_ios_rounded, color: GameTheme.textSecondary, size: 18),
+            const Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: GameTheme.textSecondary,
+              size: 18,
+            ),
           ],
         ),
       ),
@@ -394,11 +455,23 @@ class _TicTacToeScreenState extends State<TicTacToeScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(width: 40, height: 4,
-                decoration: BoxDecoration(color: GameTheme.border, borderRadius: BorderRadius.circular(2))),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: GameTheme.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
             const SizedBox(height: 20),
-            const Text('Choose your mark',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: GameTheme.textPrimary)),
+            const Text(
+              'Choose your mark',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: GameTheme.textPrimary,
+              ),
+            ),
             const SizedBox(height: 24),
             Row(
               children: [
@@ -426,16 +499,29 @@ class _TicTacToeScreenState extends State<TicTacToeScreen>
         decoration: BoxDecoration(
           color: GameTheme.background,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: isX ? const Color(0xFF4ECDC4) : const Color(0xFFFF6B6B), width: 2),
+          border: Border.all(
+            color: isX ? const Color(0xFF4ECDC4) : const Color(0xFFFF6B6B),
+            width: 2,
+          ),
         ),
         child: Column(
           children: [
-            Text(isX ? 'X' : 'O',
-                style: TextStyle(fontSize: 48, fontWeight: FontWeight.w900,
-                    color: isX ? const Color(0xFF4ECDC4) : const Color(0xFFFF6B6B))),
+            Text(
+              isX ? 'X' : 'O',
+              style: TextStyle(
+                fontSize: 48,
+                fontWeight: FontWeight.w900,
+                color: isX ? const Color(0xFF4ECDC4) : const Color(0xFFFF6B6B),
+              ),
+            ),
             const SizedBox(height: 8),
-            Text(isX ? 'Goes first' : 'Goes second',
-                style: const TextStyle(fontSize: 13, color: GameTheme.textSecondary)),
+            Text(
+              isX ? 'Goes first' : 'Goes second',
+              style: const TextStyle(
+                fontSize: 13,
+                color: GameTheme.textSecondary,
+              ),
+            ),
           ],
         ),
       ),
@@ -446,12 +532,23 @@ class _TicTacToeScreenState extends State<TicTacToeScreen>
     return Scaffold(
       backgroundColor: GameTheme.background,
       appBar: AppBar(
-        title: Text(_isWifiGame ? 'Tic Tac Toe — WiFi' : _vsAI ? 'Tic Tac Toe — vs AI' : 'Tic Tac Toe — 2 Players'),
+        title: Text(
+          _isWifiGame
+              ? 'Tic Tac Toe — WiFi'
+              : _vsAI
+              ? 'Tic Tac Toe — vs AI'
+              : 'Tic Tac Toe — 2 Players',
+        ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded, color: GameTheme.textPrimary),
+          icon: const Icon(
+            Icons.arrow_back_ios_rounded,
+            color: GameTheme.textPrimary,
+          ),
           onPressed: () {
             _disposeWifi();
-            setState(() { _mode = TTTMode.menu; });
+            setState(() {
+              _mode = TTTMode.menu;
+            });
           },
         ),
         actions: [
@@ -468,7 +565,10 @@ class _TicTacToeScreenState extends State<TicTacToeScreen>
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final gridSize = min(constraints.maxWidth - 48, constraints.maxHeight * 0.55);
+            final gridSize = min(
+              constraints.maxWidth - 48,
+              constraints.maxHeight * 0.55,
+            );
 
             return Column(
               children: [
@@ -497,27 +597,39 @@ class _TicTacToeScreenState extends State<TicTacToeScreen>
                         ? Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const SizedBox(width: 16, height: 16,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: GameTheme.accent)),
+                              const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: GameTheme.accent,
+                                ),
+                              ),
                               const SizedBox(width: 8),
-                              const Text('AI thinking...', style: TextStyle(color: GameTheme.accent, fontSize: 16)),
+                              const Text(
+                                'AI thinking...',
+                                style: TextStyle(
+                                  color: GameTheme.accent,
+                                  fontSize: 16,
+                                ),
+                              ),
                             ],
                           )
                         : Text(
                             _gameOver
                                 ? (_winner == TTTPlayer.none
-                                    ? "It's a draw!"
-                                    : '${_winner == TTTPlayer.x ? "X" : "O"} wins!')
+                                      ? "It's a draw!"
+                                      : '${_winner == TTTPlayer.x ? "X" : "O"} wins!')
                                 : "${_turn == TTTPlayer.x ? "X" : "O"}'s turn",
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w700,
                               color: _gameOver
                                   ? (_winner == TTTPlayer.x
-                                      ? const Color(0xFF4ECDC4)
-                                      : _winner == TTTPlayer.o
-                                          ? const Color(0xFFFF6B6B)
-                                          : GameTheme.textSecondary)
+                                        ? const Color(0xFF4ECDC4)
+                                        : _winner == TTTPlayer.o
+                                        ? const Color(0xFFFF6B6B)
+                                        : GameTheme.textSecondary)
                                   : GameTheme.accent,
                             ),
                           ),
@@ -536,9 +648,10 @@ class _TicTacToeScreenState extends State<TicTacToeScreen>
                       child: GridView.builder(
                         physics: const NeverScrollableScrollPhysics(),
                         itemCount: 9,
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                        ),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                            ),
                         itemBuilder: (_, i) => _buildCell(i, gridSize / 3),
                       ),
                     ),
@@ -558,26 +671,50 @@ class _TicTacToeScreenState extends State<TicTacToeScreen>
                           onPressed: () {
                             _initBoard();
                             setState(() {});
-                            if (_vsAI && _humanMark == TTTPlayer.o) _scheduleAI();
+                            if (_vsAI && _humanMark == TTTPlayer.o) {
+                              _scheduleAI();
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: GameTheme.accent,
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
-                          child: const Text('Play Again',
-                              style: TextStyle(fontWeight: FontWeight.w700, color: Colors.white)),
+                          child: const Text(
+                            'Play Again',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
                         const SizedBox(width: 12),
                         OutlinedButton(
-                          onPressed: () => setState(() { _mode = TTTMode.menu; }),
+                          onPressed: () => setState(() {
+                            _mode = TTTMode.menu;
+                          }),
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(color: GameTheme.accent),
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
-                          child: const Text('Menu',
-                              style: TextStyle(fontWeight: FontWeight.w700, color: GameTheme.accent)),
+                          child: const Text(
+                            'Menu',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: GameTheme.accent,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -602,9 +739,23 @@ class _TicTacToeScreenState extends State<TicTacToeScreen>
       ),
       child: Column(
         children: [
-          Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: color)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
           const SizedBox(height: 2),
-          Text('$value', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: GameTheme.textPrimary)),
+          Text(
+            '$value',
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: GameTheme.textPrimary,
+            ),
+          ),
         ],
       ),
     );
@@ -622,17 +773,17 @@ class _TicTacToeScreenState extends State<TicTacToeScreen>
           child: mark == TTTPlayer.none
               ? null
               : _markAnims.containsKey(index)
-                  ? AnimatedBuilder(
-                      animation: _markAnims[index]!,
-                      builder: (_, __) {
-                        final t = _markAnims[index]!.value;
-                        return Transform.scale(
-                          scale: Curves.elasticOut.transform(t.clamp(0.0, 1.0)),
-                          child: _buildMark(mark, cellSize, isWinCell),
-                        );
-                      },
-                    )
-                  : _buildMark(mark, cellSize, isWinCell),
+              ? AnimatedBuilder(
+                  animation: _markAnims[index]!,
+                  builder: (_, __) {
+                    final t = _markAnims[index]!.value;
+                    return Transform.scale(
+                      scale: Curves.elasticOut.transform(t.clamp(0.0, 1.0)),
+                      child: _buildMark(mark, cellSize, isWinCell),
+                    );
+                  },
+                )
+              : _buildMark(mark, cellSize, isWinCell),
         ),
       ),
     );
@@ -643,18 +794,12 @@ class _TicTacToeScreenState extends State<TicTacToeScreen>
     if (mark == TTTPlayer.x) {
       return CustomPaint(
         size: Size(size, size),
-        painter: _XPainter(
-          color: const Color(0xFF4ECDC4),
-          glow: isWinCell,
-        ),
+        painter: _XPainter(color: const Color(0xFF4ECDC4), glow: isWinCell),
       );
     } else {
       return CustomPaint(
         size: Size(size, size),
-        painter: _OPainter(
-          color: const Color(0xFFFF6B6B),
-          glow: isWinCell,
-        ),
+        painter: _OPainter(color: const Color(0xFFFF6B6B), glow: isWinCell),
       );
     }
   }
@@ -675,11 +820,27 @@ class _GridLinesPainter extends CustomPainter {
     final margin = 12.0;
 
     // Vertical lines
-    canvas.drawLine(Offset(cellW, margin), Offset(cellW, size.height - margin), paint);
-    canvas.drawLine(Offset(cellW * 2, margin), Offset(cellW * 2, size.height - margin), paint);
+    canvas.drawLine(
+      Offset(cellW, margin),
+      Offset(cellW, size.height - margin),
+      paint,
+    );
+    canvas.drawLine(
+      Offset(cellW * 2, margin),
+      Offset(cellW * 2, size.height - margin),
+      paint,
+    );
     // Horizontal lines
-    canvas.drawLine(Offset(margin, cellH), Offset(size.width - margin, cellH), paint);
-    canvas.drawLine(Offset(margin, cellH * 2), Offset(size.width - margin, cellH * 2), paint);
+    canvas.drawLine(
+      Offset(margin, cellH),
+      Offset(size.width - margin, cellH),
+      paint,
+    );
+    canvas.drawLine(
+      Offset(margin, cellH * 2),
+      Offset(size.width - margin, cellH * 2),
+      paint,
+    );
   }
 
   @override

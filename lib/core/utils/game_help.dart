@@ -19,6 +19,7 @@ Goal: Checkmate your opponent's King so it cannot escape capture.''',
     'Ludo': '''
 Each player has 4 tokens in their base.
 
+- Two-player matches always use diagonally opposite colors: Red vs Yellow or Green vs Blue
 - Roll a 6 to bring a token out of base
 - Move tokens clockwise around the board by dice value
 - Land on an opponent's token to send it back to base
@@ -84,7 +85,7 @@ Find all matching pairs of cards.
 
 Fewer moves = better score.''',
 
-    'Connect 4': '''
+    'Four in a Row': '''
 Drop colored discs into a 7-column, 6-row grid.
 
 - Players take turns dropping one disc
@@ -94,7 +95,7 @@ Drop colored discs into a 7-column, 6-row grid.
 
 Tip: Watch for your opponent's setups while building your own.''',
 
-    'Simon Says': '''
+    'Color Recall': '''
 Follow the pattern of colored buttons.
 
 - Watch the sequence of lights carefully
@@ -104,10 +105,10 @@ Follow the pattern of colored buttons.
 
 The sequence gets longer each round. How far can you go?''',
 
-    'Wordle': '''
-Guess the 5-letter word in 6 tries!
+    'Five Letters': '''
+Guess the hidden 5-letter word in 6 tries. Every submitted guess must be a valid 5-letter word.
 
-- Type a 5-letter word and press ENTER
+- Tap letters on the keyboard, then press ENTER
 - Tiles change color after each guess:
   - Green = correct letter, correct position
   - Yellow = correct letter, wrong position
@@ -153,7 +154,7 @@ Take turns drawing lines between dots.
 
 Tip: Avoid drawing the 3rd side of a box — your opponent will take it.''',
 
-    'Tetris': '''
+    'Falling Blocks': '''
 Stack falling tetrominoes and clear full horizontal lines.
 
 Controls (swipe):
@@ -165,11 +166,11 @@ Controls (swipe):
 Or toggle the D-Pad in the top bar for buttons.
 
 Scoring (multiplied by level):
-- 1 line = 40, 2 = 100, 3 = 300, 4 (Tetris!) = 1200
+- 1 line = 40, 2 = 100, 3 = 300, 4 lines = 1200
 - Every 10 lines raises the level — speed increases.
 
 Tips:
-- Keep one column open and save I-pieces for Tetrises.
+- Keep one column open and save I-pieces for four-line clears.
 - The dim ghost shows where the piece will land.''',
 
     'Stack': '''
@@ -185,7 +186,7 @@ Tips:
 - A PERFECT drop (aligned within a hair) keeps the full width and builds a streak
 - Speed rises steadily — stay relaxed''',
 
-    'Headsup!': '''
+    'Guess It!': '''
 Pass-and-play party game — also known as Dumb Charades.
 
 Setup:
@@ -204,7 +205,7 @@ Winning:
 
 Screen works in portrait or landscape — whichever feels natural on the forehead.''',
 
-    'Pac-Man': '''
+    'Maze Munch': '''
 Eat every dot in the maze while avoiding ghosts.
 
 Controls:
@@ -247,7 +248,8 @@ Tip: Use the tunnel edges to escape when a ghost closes in.''',
             // Handle bar
             Container(
               margin: const EdgeInsets.only(top: 12),
-              width: 40, height: 4,
+              width: 40,
+              height: 4,
               decoration: BoxDecoration(
                 color: GameTheme.border,
                 borderRadius: BorderRadius.circular(2),
@@ -257,18 +259,28 @@ Tip: Use the tunnel edges to escape when a ghost closes in.''',
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
               child: Row(
                 children: [
-                  const Icon(Icons.help_outline_rounded,
-                    color: GameTheme.accent, size: 22),
+                  const Icon(
+                    Icons.help_outline_rounded,
+                    color: GameTheme.accent,
+                    size: 22,
+                  ),
                   const SizedBox(width: 10),
-                  Text('How to Play $gameName',
+                  Text(
+                    'How to Play $gameName',
                     style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.w700,
-                      color: GameTheme.textPrimary)),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: GameTheme.textPrimary,
+                    ),
+                  ),
                   const Spacer(),
                   GestureDetector(
                     onTap: () => Navigator.pop(ctx),
-                    child: const Icon(Icons.close_rounded,
-                      color: GameTheme.textSecondary, size: 22),
+                    child: const Icon(
+                      Icons.close_rounded,
+                      color: GameTheme.textSecondary,
+                      size: 22,
+                    ),
                   ),
                 ],
               ),
@@ -277,10 +289,14 @@ Tip: Use the tunnel edges to escape when a ghost closes in.''',
             Flexible(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-                child: Text(text,
+                child: Text(
+                  text,
                   style: const TextStyle(
-                    fontSize: 15, color: GameTheme.textPrimary,
-                    height: 1.6)),
+                    fontSize: 15,
+                    color: GameTheme.textPrimary,
+                    height: 1.6,
+                  ),
+                ),
               ),
             ),
           ],
