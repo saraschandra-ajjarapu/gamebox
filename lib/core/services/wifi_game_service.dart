@@ -29,19 +29,57 @@ class WifiGameService {
   List<String> get playerNames => List.unmodifiable(_playerNames);
   bool get connected => _connected;
 
+  /// Usable IPv4 addresses for this device's local networks, best first.
+  ///
+  /// Drops loopback and 169.254.x.x link-local (a link-local address means no
+  /// DHCP lease, so no peer will share that subnet), and sorts RFC1918 private
+  /// ranges ahead of everything else because that is what home and office WiFi
+  /// hands out. Callers must never assume NetworkInterface.list() ordering —
+  /// it is arbitrary and frequently puts cellular or VPN interfaces first.
+  static Future<List<InternetAddress>> _lanAddresses() async {
+    final interfaces = await NetworkInterface.list(
+      type: InternetAddressType.IPv4,
+      includeLoopback: false,
+    );
+    final out = <InternetAddress>[];
+    for (final ni in interfaces) {
+      for (final addr in ni.addresses) {
+        if (addr.isLoopback) continue;
+        if (addr.address.startsWith('169.254.')) continue;
+        out.add(addr);
+      }
+    }
+    out.sort((a, b) {
+      final ra = _isPrivateIPv4(a.address) ? 0 : 1;
+      final rb = _isPrivateIPv4(b.address) ? 0 : 1;
+      return ra.compareTo(rb);
+    });
+    return out;
+  }
+
+  static bool _isPrivateIPv4(String address) {
+    if (address.startsWith('192.168.') || address.startsWith('10.')) {
+      return true;
+    }
+    final match = RegExp(r'^172\.(\d{1,3})\.').firstMatch(address);
+    if (match == null) return false;
+    final second = int.parse(match.group(1)!);
+    return second >= 16 && second <= 31;
+  }
+
   /// Host a game — creates a TCP server on a random port
   Future<bool> host(String playerName) async {
     try {
-      final interfaces = await NetworkInterface.list(
-        type: InternetAddressType.IPv4,
-      );
-      if (interfaces.isEmpty) {
+      if ((await _lanAddresses()).isEmpty) {
         onError?.call('No WiFi connection found');
         return false;
       }
 
-      final ip = interfaces.first.addresses.first;
-      _server = await ServerSocket.bind(ip, 0);
+      // Bind every interface, not one picked by list order. NetworkInterface
+      // .list() is unordered, so `.first` is regularly cellular (pdp_ip0 /
+      // rmnet_data) or a VPN (utun) rather than WiFi — binding there leaves
+      // the server unreachable from the LAN even though hosting "succeeded".
+      _server = await ServerSocket.bind(InternetAddress.anyIPv4, 0);
       _roomCode = '${_server!.port}';
       _isHost = true;
       _playerIndex = 0;
@@ -79,43 +117,58 @@ class WifiGameService {
   /// Join a game — connects to host via room code (port)
   Future<bool> join(String code, String playerName) async {
     try {
-      final interfaces = await NetworkInterface.list(
-        type: InternetAddressType.IPv4,
-      );
-      if (interfaces.isEmpty) {
+      final localAddresses = await _lanAddresses();
+      if (localAddresses.isEmpty) {
         onError?.call('No WiFi connection found');
         return false;
       }
 
-      final myIp = interfaces.first.addresses.first;
-      final subnet = myIp.address.substring(0, myIp.address.lastIndexOf('.'));
       final port = int.tryParse(code);
       if (port == null) {
         onError?.call('Invalid room code');
         return false;
       }
 
-      // Scan subnet for the host
+      // Scan every LAN subnet this device is on, not just the one belonging to
+      // whichever interface happened to sort first. A phone routinely has WiFi
+      // plus cellular (and sometimes a VPN); scanning the wrong /24 finds
+      // nothing and looks exactly like "the host isn't running".
       Socket? socket;
-      final futures = <Future>[];
-      for (int i = 1; i <= 255; i++) {
-        futures.add(
-          Socket.connect(
-                '$subnet.$i',
-                port,
-                timeout: const Duration(milliseconds: 150),
-              )
-              .then((s) {
-                if (socket == null) {
-                  socket = s;
-                } else {
-                  s.destroy();
-                }
-              })
-              .catchError((_) {}),
+      final scanned = <String>{};
+      for (final address in localAddresses) {
+        final subnet = address.address.substring(
+          0,
+          address.address.lastIndexOf('.'),
         );
+        if (!scanned.add(subnet)) continue;
+
+        // Chunked so we never hold 255 pending sockets at once — that trips
+        // per-process file-descriptor limits, and a refused connect there
+        // surfaces as a false "host not found".
+        for (var start = 1; start <= 255 && socket == null; start += 32) {
+          final end = (start + 31).clamp(1, 255);
+          final batch = <Future<void>>[];
+          for (var i = start; i <= end; i++) {
+            batch.add(
+              Socket.connect(
+                    '$subnet.$i',
+                    port,
+                    timeout: const Duration(milliseconds: 600),
+                  )
+                  .then((s) {
+                    if (socket == null) {
+                      socket = s;
+                    } else {
+                      s.destroy();
+                    }
+                  })
+                  .catchError((_) {}),
+            );
+          }
+          await Future.wait(batch);
+        }
+        if (socket != null) break;
       }
-      await Future.wait(futures);
 
       if (socket == null) {
         onError?.call('Could not find host. Same WiFi?');

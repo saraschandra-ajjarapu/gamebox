@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Sampled from the source artwork's backdrop so the foreground's edges
+         blend into the background layer at every mask shape. -->
+    <color name="ic_launcher_background">#000019</color>
+</resources>
