@@ -28,6 +28,16 @@
 	<string>$(ADMOB_APP_ID)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<!--
+	  Required for the "WiFi Multiplayer" mode in Chess, Tic Tac Toe,
+	  Connect 4 and Dots & Boxes. WifiGameService opens a TCP ServerSocket
+	  on the host device and the joining device scans the local /24 subnet
+	  to find it. On iOS 14+ that is local-network access: without this key
+	  iOS denies it outright and never even shows the permission prompt, so
+	  WiFi Multiplayer fails silently.
+	-->
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Quirkade uses your local network to find another player on the same Wi-Fi, so you can play Chess, Tic Tac Toe, Connect 4 and Dots &amp; Boxes against someone on a nearby device. This is used only while you host or join a WiFi Multiplayer game.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>
