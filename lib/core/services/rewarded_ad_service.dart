@@ -27,6 +27,13 @@ class RewardedAdService {
   RewardedAd? _ad;
   bool _initialized = false;
   bool _loading = false;
+  bool _canRequestAds = false;
+
+  /// Whether the SDK is initialized and consent permits ad requests.
+  ///
+  /// Other ad surfaces (the home banner) gate on this instead of repeating the
+  /// consent flow — the UMP form must be shown once, not once per format.
+  bool get canRequestAds => _canRequestAds;
 
   String get _adUnitId {
     if (Platform.isAndroid) {
@@ -61,6 +68,7 @@ class RewardedAdService {
       if (error != null) debugPrint('Consent form error: $error');
     });
     if (!await ConsentInformation.instance.canRequestAds()) return;
+    _canRequestAds = true;
 
     // Cap every ad request at G — content suitable for general audiences,
     // including families. Without this AdMob is free to serve up to its

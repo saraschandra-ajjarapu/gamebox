@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/theme/game_theme.dart';
+import '../../../core/widgets/home_banner_ad.dart';
 import '../../../core/utils/game_help.dart';
 import '../../game_2048/ui/game_2048_screen.dart';
 import '../../snake/ui/snake_game_screen.dart';
@@ -331,6 +332,18 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ],
                   ),
+                ),
+              ),
+            ),
+            // Anchored banner, pinned below everything else on the home grid.
+            // Non-gameplay surface only — see HomeBannerAd. Collapses to zero
+            // height when no ad fills, so the layout is unchanged when AdMob
+            // returns nothing.
+            const SliverToBoxAdapter(
+              child: Center(
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: 12),
+                  child: HomeBannerAd(),
                 ),
               ),
             ),
