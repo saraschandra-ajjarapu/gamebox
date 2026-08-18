@@ -7,6 +7,7 @@ import '../../../core/theme/game_theme.dart';
 import '../../../core/utils/game_help.dart';
 import '../../../core/widgets/high_score_dialog.dart';
 import '../../../core/services/rewarded_ad_service.dart';
+import '../../../core/widgets/rewarded_continue_button.dart';
 
 class SnakeGameScreen extends StatefulWidget {
   const SnakeGameScreen({super.key});
@@ -842,29 +843,11 @@ class _SnakeGameScreenState extends State<SnakeGameScreen> {
                                           ),
                                         ),
                                       ),
-                                      if (_gameOver &&
-                                          !_usedRewardedContinue) ...[
-                                        const SizedBox(height: 10),
-                                        ValueListenableBuilder<bool>(
-                                          valueListenable: RewardedAdService
-                                              .instance
-                                              .isReady,
-                                          builder: (context, ready, _) =>
-                                              OutlinedButton.icon(
-                                                onPressed: ready
-                                                    ? _watchAdAndContinue
-                                                    : null,
-                                                icon: const Icon(
-                                                  Icons.ondemand_video_rounded,
-                                                ),
-                                                label: Text(
-                                                  ready
-                                                      ? 'Watch ad to continue'
-                                                      : 'Continue ad unavailable',
-                                                ),
-                                              ),
-                                        ),
-                                      ],
+                                      RewardedContinueButton(
+                                        gameOver: _gameOver,
+                                        alreadyUsed: _usedRewardedContinue,
+                                        onContinue: _watchAdAndContinue,
+                                      ),
                                       if (!_gameOver) ...[
                                         const SizedBox(height: 10),
                                         Text(

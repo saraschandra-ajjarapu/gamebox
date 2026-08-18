@@ -6,6 +6,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/game_theme.dart';
 import '../../../core/utils/game_help.dart';
 import '../../../core/widgets/high_score_dialog.dart';
+import '../../../core/services/rewarded_ad_service.dart';
+import '../../../core/widgets/rewarded_continue_button.dart';
 
 class StackGameScreen extends StatefulWidget {
   const StackGameScreen({super.key});
@@ -38,6 +40,7 @@ class _StackGameScreenState extends State<StackGameScreen>
   int _bestScore = 0;
   bool _started = false;
   bool _gameOver = false;
+  bool _usedRewardedContinue = false;
   bool _showPerfect = false;
   int _perfectStreak = 0;
 
@@ -80,11 +83,33 @@ class _StackGameScreenState extends State<StackGameScreen>
     _direction = 1;
     _speed = _baseSpeed;
     _perfectStreak = 0;
+    _usedRewardedContinue = false;
     _gameOver = false;
     _started = true;
     _lastTickTime = Duration.zero;
     _ticker?.start();
     setState(() {});
+  }
+
+  /// Resumes the tower at its current height for a watched ad.
+  ///
+  /// A miss is what ends the run, so the continue re-issues a block at the
+  /// width the tower had before the miss — the player keeps their height and
+  /// score rather than restarting from the foundation.
+  Future<void> _watchAdAndContinue() async {
+    if (_usedRewardedContinue || !_gameOver) return;
+    final earned = await RewardedAdService.instance.show();
+    if (!mounted || !earned) return;
+    setState(() {
+      final top = _stack.last;
+      _current = _Block(x: 0, width: top.width);
+      _currentX = 0;
+      _direction = 1;
+      _gameOver = false;
+      _usedRewardedContinue = true;
+      _lastTickTime = Duration.zero;
+    });
+    _ticker?.start();
   }
 
   void _onTick(Duration elapsed) {
@@ -347,6 +372,11 @@ class _StackGameScreenState extends State<StackGameScreen>
                                               color: Colors.white,
                                             ),
                                           ),
+                                        ),
+                                        RewardedContinueButton(
+                                          gameOver: _gameOver,
+                                          alreadyUsed: _usedRewardedContinue,
+                                          onContinue: _watchAdAndContinue,
                                         ),
                                         if (!_started && !_gameOver) ...[
                                           const SizedBox(height: 10),

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/game_theme.dart';
+import '../../../core/services/rewarded_ad_service.dart';
+import '../../../core/widgets/rewarded_continue_button.dart';
 import '../../../core/utils/game_help.dart';
 import '../../../core/widgets/high_score_dialog.dart';
 
@@ -142,6 +144,7 @@ class _PacManScreenState extends State<PacManScreen> {
   int _tickCounter = 0;
 
   bool _gameOver = false;
+  bool _usedRewardedContinue = false;
   bool _won = false;
   bool _started = false;
 
@@ -265,6 +268,7 @@ class _PacManScreenState extends State<PacManScreen> {
   void _startGame() {
     _score = 0;
     _lives = 3;
+    _usedRewardedContinue = false;
     _level = 1;
     _gameOver = false;
     _won = false;
@@ -310,6 +314,22 @@ class _PacManScreenState extends State<PacManScreen> {
     _fruitPos = empties[rng.nextInt(empties.length)];
     _fruitTicks = 80; // ~16 seconds at 200ms ticks
     HapticFeedback.selectionClick();
+  }
+
+  /// Grants one extra life for a watched ad, resuming the same maze with the
+  /// score, level and remaining dots intact — dying is what ended the run, so
+  /// a life is the continue that makes sense here.
+  Future<void> _watchAdAndContinue() async {
+    if (_usedRewardedContinue || !_gameOver) return;
+    final earned = await RewardedAdService.instance.show();
+    if (!mounted || !earned) return;
+    setState(() {
+      _lives = 1;
+      _gameOver = false;
+      _usedRewardedContinue = true;
+      _resetPositionsAfterDeath();
+    });
+    _restartTimer();
   }
 
   void _resetPositionsAfterDeath() {
@@ -883,6 +903,12 @@ class _PacManScreenState extends State<PacManScreen> {
                                               color: Colors.white,
                                             ),
                                           ),
+                                        ),
+                                        RewardedContinueButton(
+                                          gameOver: _gameOver,
+                                          alreadyUsed: _usedRewardedContinue,
+                                          onContinue: _watchAdAndContinue,
+                                          label: 'Watch ad for an extra life',
                                         ),
                                         if (!_started && !_gameOver) ...[
                                           const SizedBox(height: 10),

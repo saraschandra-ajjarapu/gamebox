@@ -6,6 +6,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/game_theme.dart';
 import '../../../core/utils/game_help.dart';
 import '../../../core/widgets/high_score_dialog.dart';
+import '../../../core/services/rewarded_ad_service.dart';
+import '../../../core/widgets/rewarded_continue_button.dart';
 
 class SimonScreen extends StatefulWidget {
   const SimonScreen({super.key});
@@ -34,6 +36,7 @@ class _SimonScreenState extends State<SimonScreen> {
   bool _playing = false;
   bool _showingSequence = false;
   bool _gameOver = false;
+  bool _usedRewardedContinue = false;
   int _litButton = -1;
   final _rng = Random();
 
@@ -57,11 +60,30 @@ class _SimonScreenState extends State<SimonScreen> {
   void _startGame() {
     _sequence = [];
     _round = 0;
+    _usedRewardedContinue = false;
     _gameOver = false;
     _playing = true;
     _playerIndex = 0;
     setState(() {});
     _nextRound();
+  }
+
+  /// Replays the current sequence for a watched ad instead of ending the run.
+  ///
+  /// One wrong tap is what fails Color Recall, so the continue keeps the
+  /// sequence and round intact and shows it again from the start — the player
+  /// resumes at the length they reached rather than from one colour.
+  Future<void> _watchAdAndContinue() async {
+    if (_usedRewardedContinue || !_gameOver) return;
+    final earned = await RewardedAdService.instance.show();
+    if (!mounted || !earned) return;
+    setState(() {
+      _gameOver = false;
+      _playing = true;
+      _playerIndex = 0;
+      _usedRewardedContinue = true;
+    });
+    _showSequence();
   }
 
   void _nextRound() {
@@ -228,6 +250,13 @@ class _SimonScreenState extends State<SimonScreen> {
                 ),
 
                 const Spacer(),
+
+                RewardedContinueButton(
+                  gameOver: _gameOver,
+                  alreadyUsed: _usedRewardedContinue,
+                  onContinue: _watchAdAndContinue,
+                  label: 'Watch ad to retry this round',
+                ),
 
                 // Start/Play Again
                 Padding(
