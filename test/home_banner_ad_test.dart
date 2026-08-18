@@ -5,23 +5,40 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quirkade/core/widgets/home_banner_ad.dart';
 
 void main() {
-  test('production banner IDs have no default, so release ships dark', () {
+  test('production banner units are real, never Google test units', () {
     // Tests run in debug, where adUnitId correctly resolves to Google's test
-    // unit — so assert the invariant at the source instead: the production
-    // constants must have NO defaultValue. If one were given a test ID as its
-    // default, a release build would serve Google's test creatives to real
-    // users, which looks like a broken app and earns nothing.
+    // unit — so assert the invariant at the source instead.
+    //
+    // The IDs are hardcoded defaults rather than required dart-defines, so a
+    // build that forgets a flag cannot silently ship the banner dark. The risk
+    // that swaps in for that one is a test unit reaching production, which
+    // would serve "Test Ad" creatives to real users and earn nothing.
+    const googleTestPublisher = '3940256099942544';
+    const ourPublisher = '3095968893828878';
     final source =
         File('lib/core/widgets/home_banner_ad.dart').readAsStringSync();
+
     for (final key in ['ADMOB_ANDROID_BANNER_ID', 'ADMOB_IOS_BANNER_ID']) {
       final decl = RegExp(
-        r"String\.fromEnvironment\(\s*'" + key + r"',([^)]*)\)",
+        r"String\.fromEnvironment\(\s*'" + key + r"',(.*?)\);",
+        dotAll: true,
       ).firstMatch(source);
       expect(decl, isNotNull, reason: '$key must be a dart-define');
+      final body = decl!.group(1)!;
       expect(
-        decl!.group(1),
-        isNot(contains('defaultValue')),
-        reason: '$key must default to empty so release ships dark',
+        body,
+        contains('defaultValue'),
+        reason: '$key must default to a real unit, not ship dark',
+      );
+      expect(
+        body,
+        contains(ourPublisher),
+        reason: '$key default must belong to our AdMob publisher',
+      );
+      expect(
+        body,
+        isNot(contains(googleTestPublisher)),
+        reason: '$key must never default to a Google test unit',
       );
     }
   });

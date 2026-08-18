@@ -20,11 +20,19 @@ import '../services/rewarded_ad_service.dart';
 class HomeBannerAd extends StatefulWidget {
   const HomeBannerAd({super.key});
 
+  // Hardcoded as defaults, matching RewardedAdService. Ad unit IDs are not
+  // secrets — they are extractable from any shipped binary, and the AdMob app
+  // ID already sits in Release.xcconfig. Keeping them here means a build that
+  // forgets a --dart-define cannot silently ship the banner dark, which is
+  // exactly how the GIF key once shipped disabled on Buzzz. The dart-define is
+  // still honoured, so a build can point at a different unit when needed.
   static const _androidProductionId = String.fromEnvironment(
     'ADMOB_ANDROID_BANNER_ID',
+    defaultValue: 'ca-app-pub-3095968893828878/3611915240',
   );
   static const _iosProductionId = String.fromEnvironment(
     'ADMOB_IOS_BANNER_ID',
+    defaultValue: 'ca-app-pub-3095968893828878/1206027570',
   );
 
   // Google's own always-fill test units, used only in debug/profile so the
