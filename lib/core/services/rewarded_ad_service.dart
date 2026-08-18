@@ -62,6 +62,22 @@ class RewardedAdService {
     });
     if (!await ConsentInformation.instance.canRequestAds()) return;
 
+    // Cap every ad request at G — content suitable for general audiences,
+    // including families. Without this AdMob is free to serve up to its
+    // account default, which can include T and MA (mature) creatives:
+    // gambling, dating, alcohol. Quirkade is rated 4+ and played by children,
+    // so an 18+ creative appearing between rounds of Snake would be a real
+    // problem regardless of what the store rating says.
+    //
+    // Deliberately NOT setting tagForChildDirectedTreatment. That is a COPPA
+    // declaration that the app is directed at children; this app is published
+    // as a general-audience title (isOrEverWasMadeForKids is false on the App
+    // Store), so claiming otherwise here would contradict the store listing.
+    // maxAdContentRating is the correct control for "no adult creatives" and
+    // does not disable personalized ads for adults.
+    await MobileAds.instance.updateRequestConfiguration(
+      RequestConfiguration(maxAdContentRating: MaxAdContentRating.g),
+    );
     await MobileAds.instance.initialize();
     _load();
   }
