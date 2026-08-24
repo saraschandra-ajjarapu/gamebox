@@ -225,10 +225,10 @@ class HomeScreen extends StatelessWidget {
                     onTap: () => _push(context, const QuizScreen()),
                   ),
                   _GameCard(
-                    title: 'Five Letters',
-                    subtitle: 'Guess the word',
+                    title: 'Guess the Word',
+                    subtitle: 'Pick a topic',
                     icon: Icons.abc_rounded,
-                    helpName: 'Five Letters',
+                    helpName: 'Guess the Word',
                     gradient: const [Color(0xFF538D4E), Color(0xFF3A6B35)],
                     players: '1 Player',
                     onTap: () => _push(context, const WordleScreen()),

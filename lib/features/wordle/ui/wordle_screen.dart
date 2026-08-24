@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/game_theme.dart';
-import '../../../core/utils/game_help.dart';
 import '../../../core/widgets/high_score_dialog.dart';
-import '../data/word_list.dart';
+import '../data/topic_words.dart';
+import 'word_intro.dart';
 
 enum TileState { empty, filled, correct, present, absent }
 
@@ -17,9 +17,12 @@ class WordleScreen extends StatefulWidget {
 
 class _WordleScreenState extends State<WordleScreen>
     with TickerProviderStateMixin {
-  static const int _maxGuesses = 6;
-  static const int _wordLength = 5;
+  // Both depend on the answer now, so neither can be const: a topic's words
+  // are 4-8 letters and the grid is built to whichever one was drawn.
+  int _maxGuesses = 6;
+  int _wordLength = 5;
 
+  late WordTopic _topic;
   late String _answer;
   List<String> _guesses = [];
   String _currentGuess = '';
@@ -53,7 +56,31 @@ class _WordleScreenState extends State<WordleScreen>
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
+    _topic = wordTopics.first;
     _loadStats();
+    _newGame();
+    // The rules have to arrive before the first guess, not behind a '?' in the
+    // app bar. People were opening this game, not understanding the colours,
+    // and leaving -- so the worked example shows itself once, unprompted.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _openingFlow());
+  }
+
+  Future<void> _openingFlow() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    if (!(prefs.getBool('word_intro_seen') ?? false)) {
+      await showHowToPlayWord(context);
+      await prefs.setBool('word_intro_seen', true);
+      if (!mounted) return;
+    }
+    await _pickTopic();
+  }
+
+  /// Choose what the answer is about before guessing at it.
+  Future<void> _pickTopic() async {
+    final picked = await showTopicPicker(context, _topic);
+    if (!mounted || picked == null) return;
+    setState(() => _topic = picked);
     _newGame();
   }
 
@@ -88,7 +115,12 @@ class _WordleScreenState extends State<WordleScreen>
 
   void _newGame() {
     final rng = Random();
-    _answer = wordleAnswers[rng.nextInt(wordleAnswers.length)].toUpperCase();
+    final pool = _topic.answers;
+    _answer = pool[rng.nextInt(pool.length)].toUpperCase();
+    _wordLength = _answer.length;
+    // Six guesses at an eight-letter word is a far harder ask than six at a
+    // five-letter one, so the budget grows with the answer.
+    _maxGuesses = _wordLength <= 5 ? 6 : (_wordLength <= 7 ? 7 : 8);
     _guesses = [];
     _currentGuess = '';
     _gameOver = false;
@@ -130,11 +162,13 @@ class _WordleScreenState extends State<WordleScreen>
       return;
     }
 
-    // Check if valid word
-    if (!wordleAnswers.any((w) => w.toUpperCase() == _currentGuess)) {
-      _shake('Not in word list');
-      return;
-    }
+    // Deliberately no dictionary check.
+    //
+    // Guesses used to be validated against the 766 answers, so ordinary words
+    // -- audio, least, roast, irate -- came back as 'Not in word list'. Being
+    // told a real word is not a word, while a limited guess budget ticks down,
+    // reads as the game being broken rather than hard. Any word of the right
+    // length is now accepted; the answer is still the only thing that wins.
 
     final guess = _currentGuess;
     _guesses.add(guess);
@@ -179,7 +213,7 @@ class _WordleScreenState extends State<WordleScreen>
         HighScoreDialog.submitIfQualifies(
           context: context,
           gameId: 'wordle',
-          gameName: 'Five Letters',
+          gameName: 'Guess the Word',
           score: streakNow,
           scoreLabel: 'Streak',
         );
@@ -278,7 +312,7 @@ class _WordleScreenState extends State<WordleScreen>
     return Scaffold(
       backgroundColor: GameTheme.background,
       appBar: AppBar(
-        title: const Text('Five Letters'),
+        title: Text('${_topic.emoji}  ${_topic.name}'),
         leading: IconButton(
           icon: const Icon(
             Icons.arrow_back_ios_rounded,
@@ -330,10 +364,18 @@ class _WordleScreenState extends State<WordleScreen>
           ),
           IconButton(
             icon: const Icon(
+              Icons.category_rounded,
+              color: GameTheme.textSecondary,
+            ),
+            tooltip: 'Change topic',
+            onPressed: _pickTopic,
+          ),
+          IconButton(
+            icon: const Icon(
               Icons.help_outline_rounded,
               color: GameTheme.accent,
             ),
-            onPressed: () => GameHelp.show(context, 'Five Letters'),
+            onPressed: () => showHowToPlayWord(context),
           ),
         ],
       ),
@@ -374,20 +416,23 @@ class _WordleScreenState extends State<WordleScreen>
               ),
             ),
 
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 2, 16, 4),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 2, 16, 4),
               child: Column(
                 children: [
+                  // Says the topic and the length up front. Knowing it is a
+                  // six-letter cricket word is most of the help a stuck player
+                  // needs, and it costs nothing to show.
                   Text(
-                    'Guess the hidden 5-letter word in 6 tries',
-                    style: TextStyle(
+                    '${_topic.name} · $_wordLength letters · $_maxGuesses tries',
+                    style: const TextStyle(
                       color: GameTheme.textSecondary,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  SizedBox(height: 6),
-                  Wrap(
+                  const SizedBox(height: 6),
+                  const Wrap(
                     alignment: WrapAlignment.center,
                     spacing: 12,
                     runSpacing: 4,

@@ -105,22 +105,23 @@ Follow the pattern of colored buttons.
 
 The sequence gets longer each round. How far can you go?''',
 
-    'Five Letters': '''
-Guess the hidden 5-letter word in 6 tries. Every submitted guess must be a valid 5-letter word.
+    'Guess the Word': '''
+Pick a topic — Cricket, Movies, Food, School and more — then find the hidden word from it.
 
-- Tap letters on the keyboard, then press ENTER
-- Tiles change color after each guess:
-  - Green = correct letter, correct position
-  - Yellow = correct letter, wrong position
-  - Gray = letter not in the word
-- The keyboard updates to show which letters you've used
+- The topic and the number of letters are shown above the grid
+- Type any word of that length and press ENTER
+- Green: right letter, right place
+- Yellow: right letter, wrong place
+- Grey: the letter is not in the word
 
-Tips:
-- Start with words that use common letters (E, A, R, S, T)
-- Avoid reusing gray letters
-- Use yellow letters in different positions
+Example — topic Cricket, word PITCH:
+- CATCH shows T, C, H green
+- SPINS shows P and I yellow
 
-Stats track your win streak and win rate across games.''',
+Any word of the correct length is accepted, so guess freely. The bulb reveals a letter twice per game. Longer words get more tries.
+
+Goal: Find the word and build the longest streak.''',
+
 
     'Quiz': '''
 Test your knowledge across 8 fun categories!
