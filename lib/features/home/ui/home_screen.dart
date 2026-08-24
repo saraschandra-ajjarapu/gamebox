@@ -14,6 +14,7 @@ import '../../sudoku/ui/sudoku_screen.dart';
 import '../../simon/ui/simon_screen.dart';
 import '../../dots_boxes/ui/dots_boxes_screen.dart';
 import '../../quiz/ui/quiz_screen.dart';
+import '../../cricket/ui/cricket_screen.dart';
 import '../../wordle/ui/wordle_screen.dart';
 import '../../tetris/ui/tetris_screen.dart';
 import '../../pacman/ui/pacman_screen.dart';
@@ -223,6 +224,15 @@ class HomeScreen extends StatelessWidget {
                     gradient: const [Color(0xFF7B68EE), Color(0xFFE040FB)],
                     players: '1-4 Players',
                     onTap: () => _push(context, const QuizScreen()),
+                  ),
+                  _GameCard(
+                    title: 'Cricket Cup',
+                    subtitle: 'Time your shot',
+                    icon: Icons.sports_cricket_rounded,
+                    helpName: 'Cricket Cup',
+                    gradient: const [Color(0xFF2E9C43), Color(0xFF135F23)],
+                    players: '1 Player',
+                    onTap: () => _push(context, const CricketScreen()),
                   ),
                   _GameCard(
                     title: 'Guess the Word',

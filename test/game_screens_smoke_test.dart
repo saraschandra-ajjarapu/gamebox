@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:quirkade/core/theme/game_theme.dart';
 import 'package:quirkade/features/chess/ui/chess_game_screen.dart';
+import 'package:quirkade/features/cricket/ui/cricket_screen.dart';
 import 'package:quirkade/features/connect4/ui/connect4_screen.dart';
 import 'package:quirkade/features/dots_boxes/ui/dots_boxes_screen.dart';
 import 'package:quirkade/features/game_2048/ui/game_2048_screen.dart';
@@ -72,7 +73,8 @@ void main() {
     'Color Recall': const SimonScreen(),
     'Dots & Boxes': const DotsBoxesScreen(),
     'Quiz': const QuizScreen(),
-    'Five Letters': const WordleScreen(),
+    'Guess the Word': const WordleScreen(),
+    'Cricket Cup': const CricketScreen(),
     'Falling Blocks': const TetrisScreen(),
     'Maze Munch': const PacManScreen(),
     'Stack': const StackGameScreen(),

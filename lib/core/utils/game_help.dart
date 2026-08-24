@@ -105,6 +105,25 @@ Follow the pattern of colored buttons.
 
 The sequence gets longer each round. How far can you go?''',
 
+    'Cricket Cup': '''
+You are batting. The bowler runs in and the ball comes down the pitch toward you.
+
+- A red X shows where the ball will pitch — watch it
+- Tap anywhere the moment the ball reaches your bat
+- The closer your timing, the further the ball travels
+- Along the ground over the rope is FOUR; through the air over it is SIX
+- Short of the rope you get 1, 2 or 3 — however far you got
+- Play a fraction early and you get under the ball and loft it. That is how
+  sixes are hit, and also how you get CAUGHT if it lands short
+- Miss badly and you are BOWLED
+- Tapping before the ball is bowled is refused, not punished
+
+After every shot the field map shows where the ball went and who chased it. The gaps between fielders are worth learning.
+
+Difficulty changes the pace, how wide the ball can pitch, and how many wickets you get: Easy 8, Medium 5, Hard 3.
+
+Goal: Score the most runs in five overs.''',
+
     'Guess the Word': '''
 Pick a topic — Cricket, Movies, Food, School and more — then find the hidden word from it.
 
