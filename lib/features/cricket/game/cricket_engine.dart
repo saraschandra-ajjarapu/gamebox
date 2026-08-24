@@ -174,17 +174,17 @@ class TimingWindows {
   static TimingWindows of(CricketDifficulty difficulty) => switch (difficulty) {
     CricketDifficulty.easy => const TimingWindows(
       boundaryMs: 55,
-      decayMs: 200,
+      decayMs: 520,
       surviveMs: 850,
     ),
     CricketDifficulty.medium => const TimingWindows(
-      boundaryMs: 40,
-      decayMs: 170,
+      boundaryMs: 42,
+      decayMs: 400,
       surviveMs: 620,
     ),
     CricketDifficulty.hard => const TimingWindows(
-      boundaryMs: 28,
-      decayMs: 140,
+      boundaryMs: 30,
+      decayMs: 280,
       surviveMs: 430,
     ),
   };

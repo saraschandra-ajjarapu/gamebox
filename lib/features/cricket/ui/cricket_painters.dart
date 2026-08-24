@@ -36,6 +36,7 @@ class PitchPainter extends CustomPainter {
     required this.runUp,
     required this.swing,
     required this.showMarker,
+    this.strikeHint = 0,
   });
 
   /// The ball currently being bowled, or null between deliveries.
@@ -51,6 +52,14 @@ class PitchPainter extends CustomPainter {
   final double swing;
 
   final bool showMarker;
+
+  /// How close the ball is to the moment the bat should meet it, 0 to 1.
+  ///
+  /// Drives the target on the pitch. Device play showed the player landing
+  /// ~200ms off on every delivery and scoring nothing: there was no way to see
+  /// WHEN to hit, only where the ball would pitch, and those are different
+  /// questions. This answers the second one.
+  final double strikeHint;
 
   // Where the pitch sits on screen.
   static const _farY = 0.235;
@@ -90,6 +99,7 @@ class PitchPainter extends CustomPainter {
     _paintFarStumps(canvas, size);
     _paintBowler(canvas, size);
     if (showMarker && delivery != null) _paintBounceMarker(canvas, size);
+    if (showMarker) _paintStrikeZone(canvas, size);
     _paintNearStumps(canvas, size);
     _paintBatter(canvas, size);
     if (ballProgress != null && delivery != null) _paintBall(canvas, size);
@@ -212,49 +222,146 @@ class PitchPainter extends CustomPainter {
     }
   }
 
-  /// The batter, blocked out the way a low-resolution sprite would be.
+  /// Paint a figure from a grid of pixels.
   ///
-  /// Stands at the contact point the judging uses, beside the stumps rather
-  /// than on top of them, at a size that leaves the pitch readable. The first
-  /// pass drew this figure half again as large and centred on the strip, which
-  /// buried the crease lines and the stumps behind it.
+  /// Sprites are written as rows of characters so the shape is visible in the
+  /// source and can be adjusted a pixel at a time. Stacking plain rectangles
+  /// instead — which is what this used to do — produced a torso, a box for a
+  /// head and no discernible person: on device the batter read as a brown
+  /// block, which is exactly what it was.
+  void _sprite(
+    Canvas canvas,
+    Offset footCentre,
+    double cell,
+    List<String> rows,
+    Map<String, Color> palette,
+  ) {
+    final width = rows.first.length;
+    final left = footCentre.dx - width * cell / 2;
+    final top = footCentre.dy - rows.length * cell;
+    final paint = Paint();
+    for (var y = 0; y < rows.length; y++) {
+      for (var x = 0; x < rows[y].length; x++) {
+        final colour = palette[rows[y][x]];
+        if (colour == null) continue;
+        paint.color = colour;
+        // Half a pixel of overlap, or the grid shows seams when `cell` lands
+        // between physical pixels.
+        canvas.drawRect(
+          Rect.fromLTWH(
+            left + x * cell,
+            top + y * cell,
+            cell + 0.5,
+            cell + 0.5,
+          ),
+          paint,
+        );
+      }
+    }
+  }
+
+  static const _outline = Color(0xFF10161F);
+
+  /// The batter, seen from behind, waiting at the crease.
+  ///
+  /// Every sprite carries a dark outline. Without one a pale figure vanishes
+  /// into a cream pitch and a dark one vanishes into its own shadow, and no
+  /// amount of colour choosing fixes it — the outline is what lets the same
+  /// sprite read against grass, strip and crease alike.
+  static const _batterSprite = [
+    '...OOO...',
+    '..OHHHO..',
+    '..OHHHO..',
+    '..OGGGO..',
+    '.OOSSSOO.',
+    'OSSSSSSSO',
+    'OSSSSSSSO',
+    'OSSSSSSKO',
+    'OSSSSSSKO',
+    '.OSSSSSO.',
+    '.OPPPPPO.',
+    '.OPPPPPO.',
+    '.OPPPPPO.',
+    '.OPPPPPO.',
+    '.OPPPPPO.',
+    '.OPP.PPO.',
+    '.OOO.OOO.',
+  ];
+
+  static const _batterPalette = {
+    'O': _outline,
+    'H': Color(0xFF25336B),
+    'G': Color(0xFF161D3D),
+    'S': Color(0xFF2F63B0),
+    'K': Color(0xFFCFA36B),
+    'P': Color(0xFFEFEADC),
+  };
+
   void _paintBatter(Canvas canvas, Size size) {
     final feet = _point(batContactAt, batterU, size);
-    final unit = size.height * 0.019;
+    final cell = size.height * 0.0072;
+    _sprite(canvas, feet, cell, _batterSprite, _batterPalette);
 
-    void block(double x, double y, double w, double h, Color c) => _rect(
-      canvas,
-      Rect.fromLTWH(feet.dx + unit * x, feet.dy - unit * y, unit * w, unit * h),
-      c,
-    );
-
-    // Back leg, front leg.
-    block(0, 2.7, 0.95, 2.7, PitchColors.batterDark);
-    block(1.35, 2.4, 0.95, 2.4, PitchColors.batterDark);
-    // Torso, then the shoulder nearest us.
-    block(-0.15, 5.4, 2.6, 2.9, PitchColors.batter);
-    block(2.0, 5.1, 0.75, 1.9, PitchColors.batterDark);
-    // Helmet and grille.
-    block(0.3, 6.9, 1.9, 1.6, PitchColors.helmet);
-    block(0.3, 5.9, 1.9, 0.35, PitchColors.batterDark);
-
-    // The bat hangs from the hands and sweeps through on contact. At rest it
-    // points down at the crease, which is what a batter waiting looks like.
+    // The bat is drawn apart from the body so it can swing. It is a real bat
+    // shape — a handle, then a blade that widens — because a plain rectangle
+    // at this size reads as a stick.
     canvas.save();
-    canvas.translate(feet.dx + unit * 2.35, feet.dy - unit * 3.7);
-    canvas.rotate(0.18 + swing * 2.3);
-    _rect(
-      canvas,
-      Rect.fromLTWH(-unit * 0.2, -unit * 1.3, unit * 0.4, unit * 1.4),
-      PitchColors.batterDark,
-    );
-    _rect(
-      canvas,
-      Rect.fromLTWH(-unit * 0.42, unit * 0.05, unit * 0.84, unit * 2.7),
-      PitchColors.bat,
+    canvas.translate(feet.dx + cell * 4.0, feet.dy - cell * 9.5);
+    canvas.rotate(0.30 + swing * 2.4);
+    final blade = Path()
+      ..moveTo(-cell * 1.05, cell * 1.2)
+      ..lineTo(cell * 1.05, cell * 1.2)
+      ..lineTo(cell * 1.25, cell * 6.4)
+      ..lineTo(-cell * 1.25, cell * 6.4)
+      ..close();
+    canvas.drawPath(blade, Paint()..color = _outline);
+    final face = Path()
+      ..moveTo(-cell * 0.7, cell * 1.5)
+      ..lineTo(cell * 0.7, cell * 1.5)
+      ..lineTo(cell * 0.9, cell * 6.05)
+      ..lineTo(-cell * 0.9, cell * 6.05)
+      ..close();
+    canvas.drawPath(face, Paint()..color = const Color(0xFFDCBE8A));
+    canvas.drawRect(
+      Rect.fromLTWH(-cell * 0.5, -cell * 2.6, cell, cell * 3.9),
+      Paint()..color = const Color(0xFF2B1E12),
     );
     canvas.restore();
   }
+
+  /// The bowler, mid run-up or delivering.
+  static const _bowlerRun = [
+    '..OOO..',
+    '.OHHHO.',
+    '.OHHHO.',
+    'OOSSSOO',
+    'OSSSSSO',
+    'OSSSSSO',
+    '.OSSSO.',
+    '.OTTTO.',
+    'OOT.TOO',
+    'OO...OO',
+  ];
+
+  static const _bowlerStride = [
+    '..OOO..',
+    '.OHHHO.',
+    '.OHHHO.',
+    'OOSSSOO',
+    'OSSSSSO',
+    'OSSSSSO',
+    '.OSSSO.',
+    '.OTTTO.',
+    '.OTTTO.',
+    'OOO.OOO',
+  ];
+
+  static const _bowlerPalette = {
+    'O': _outline,
+    'H': Color(0xFFCFA36B),
+    'S': Color(0xFF3E63A8),
+    'T': Color(0xFF233A6B),
+  };
 
   /// The bowler, running in from the top of the mark and delivering.
   ///
@@ -264,33 +371,64 @@ class PitchPainter extends CustomPainter {
   void _paintBowler(Canvas canvas, Size size) {
     final t = 1.34 - runUp * 0.30;
     final feet = _point(t, 0.5, size);
-    final unit = size.height * 0.0105;
+    final cell = size.height * 0.0042;
 
-    void block(double x, double y, double w, double h, Color c) => _rect(
+    // Alternating strides while approaching, feet together once he has
+    // delivered.
+    final running = runUp > 0.02 && runUp < 0.86;
+    final legsApart = running && sin(runUp * pi * 7) > 0;
+    _sprite(
       canvas,
-      Rect.fromLTWH(feet.dx + unit * x, feet.dy - unit * y, unit * w, unit * h),
-      c,
+      feet,
+      cell,
+      legsApart ? _bowlerRun : _bowlerStride,
+      _bowlerPalette,
     );
-
-    // Legs scissor while approaching, then plant for the delivery stride.
-    final running = runUp > 0.02 && runUp < 0.88;
-    final stride = running ? sin(runUp * pi * 7) * 0.9 : 0.7;
-    block(-stride, 2.4, 0.85, 2.4, PitchColors.bowlerDark);
-    block(stride + 0.9, 2.4, 0.85, 2.4, PitchColors.bowlerDark);
-    block(-0.15, 5.1, 2.2, 2.8, PitchColors.bowler);
-    block(0.25, 6.5, 1.5, 1.5, PitchColors.batter);
 
     // The arm comes over the top through the last of the run-up.
-    final arm = ((runUp - 0.66) / 0.30).clamp(0.0, 1.0);
+    final arm = ((runUp - 0.62) / 0.32).clamp(0.0, 1.0);
     canvas.save();
-    canvas.translate(feet.dx + unit * 1.0, feet.dy - unit * 4.9);
-    canvas.rotate(-2.7 + arm * 2.5);
-    _rect(
-      canvas,
-      Rect.fromLTWH(-unit * 0.28, 0, unit * 0.65, unit * 2.5),
-      PitchColors.bowler,
+    canvas.translate(feet.dx + cell * 1.6, feet.dy - cell * 6.4);
+    canvas.rotate(-2.7 + arm * 2.6);
+    canvas.drawRect(
+      Rect.fromLTWH(-cell * 0.6, -cell * 0.4, cell * 1.2, cell * 4.2),
+      Paint()..color = _outline,
+    );
+    canvas.drawRect(
+      Rect.fromLTWH(-cell * 0.35, 0, cell * 0.7, cell * 3.6),
+      Paint()..color = const Color(0xFF3E63A8),
     );
     canvas.restore();
+  }
+
+  /// The target where bat should meet ball.
+  ///
+  /// Faint at all times so the player learns where to look, and brightening as
+  /// the ball arrives so they learn when to swing. It teaches the timing
+  /// rather than hiding it — the alternative, found on device, is a player who
+  /// taps at the wrong instant every ball and cannot tell why.
+  void _paintStrikeZone(Canvas canvas, Size size) {
+    final centre = _point(batContactAt, batterU + 0.5, size);
+    final half = _halfWidthAtY(centre.dy, size);
+    final glow = 0.16 + 0.62 * strikeHint.clamp(0.0, 1.0);
+    final rect = Rect.fromCenter(
+      center: centre,
+      width: half * (0.86 - 0.16 * strikeHint),
+      height: size.height * (0.030 - 0.006 * strikeHint),
+    );
+    canvas.drawOval(
+      rect,
+      Paint()
+        ..color = Colors.white.withValues(alpha: glow * 0.30)
+        ..style = PaintingStyle.fill,
+    );
+    canvas.drawOval(
+      rect,
+      Paint()
+        ..color = Colors.white.withValues(alpha: glow)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.6 + 1.8 * strikeHint,
+    );
   }
 
   /// The red X showing where the ball will pitch.
@@ -362,7 +500,8 @@ class PitchPainter extends CustomPainter {
       old.runUp != runUp ||
       old.swing != swing ||
       old.delivery != delivery ||
-      old.showMarker != showMarker;
+      old.showMarker != showMarker ||
+      old.strikeHint != strikeHint;
 }
 
 /// The overhead field map the original cuts to after a shot.

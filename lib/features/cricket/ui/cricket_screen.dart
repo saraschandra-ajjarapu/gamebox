@@ -92,6 +92,19 @@ class _CricketScreenState extends State<CricketScreen>
     _Phase.done => 1,
   };
 
+  /// How close the ball is to the moment to swing, 0 to 1.
+  ///
+  /// Peaks exactly at contact and falls away either side, scaled to the
+  /// difficulty's own boundary window — so Easy's target glows over a wider
+  /// span than Hard's, which is the same generosity the scoring already has.
+  double get _strikeHint {
+    final delivery = _delivery;
+    if (delivery == null || _phase != _Phase.flight) return 0;
+    final window = TimingWindows.of(_difficulty).boundaryFraction(delivery);
+    final error = (_t - idealContact).abs();
+    return (1 - error / (window * 2.4)).clamp(0.0, 1.0);
+  }
+
   /// How far through the current phase we are, 0 to 1.
   double get _t =>
       ((_now - _phaseStart).inMicroseconds / (_phaseMs * 1000)).clamp(0.0, 1.0);
@@ -427,6 +440,7 @@ class _CricketScreenState extends State<CricketScreen>
                       : 0,
                   showMarker:
                       _phase == _Phase.flight || _phase == _Phase.resolve,
+                  strikeHint: _strikeHint,
                 ),
               ),
 

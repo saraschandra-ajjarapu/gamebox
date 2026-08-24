@@ -9,7 +9,7 @@ import 'package:quirkade/features/cricket/game/cricket_engine.dart';
 /// Every other cricket test checks one rule in isolation. None of them could
 /// answer "is this game playable", which is how a build shipped where every
 /// ball came back BOWLED and a later one where every ball was a boundary.
-({int runs, int wickets, int balls}) simulate(
+({int runs, int wickets, int balls, int boundaries}) simulate(
   CricketDifficulty difficulty,
   int jitterMs, {
   int balls = 600,
@@ -18,6 +18,7 @@ import 'package:quirkade/features/cricket/game/cricket_engine.dart';
   final rng = Random(seed);
   var runs = 0;
   var wickets = 0;
+  var boundaries = 0;
   for (var i = 0; i < balls; i++) {
     final ball = Delivery.next(difficulty, rng);
     final phaseMs = ball.flightMs * ballTravel;
@@ -35,8 +36,11 @@ import 'package:quirkade/features/cricket/game/cricket_engine.dart';
     );
     runs += outcome.runs;
     if (outcome.isWicket) wickets++;
+    if (outcome == ShotOutcome.four || outcome == ShotOutcome.six) {
+      boundaries++;
+    }
   }
-  return (runs: runs, wickets: wickets, balls: balls);
+  return (runs: runs, wickets: wickets, balls: balls, boundaries: boundaries);
 }
 
 void main() {
@@ -94,12 +98,26 @@ void main() {
     test('boundaries are earned, not the default outcome', () {
       // Build 31 gave a boundary on 98% of deliveries at ordinary accuracy,
       // because the window was a fraction of the flight rather than a number
-      // of milliseconds. Ordinary accuracy should score, not dominate.
+      // of milliseconds. What matters is how OFTEN the rope is cleared, not
+      // the runs total — a high total made of twos and threes is a good
+      // innings, the same total made entirely of fours is a broken game.
       final r = simulate(CricketDifficulty.easy, 120);
       expect(
-        r.runs / r.balls,
-        lessThan(4.0),
+        r.boundaries / r.balls,
+        lessThan(0.55),
         reason: 'nearly every ball is going to the rope',
+      );
+    });
+
+    test('an ordinary mistimed shot still scores something', () {
+      // The complaint from device play was scoring 0 for a whole innings:
+      // being 200ms out returned NO RUN every time. Missing by that much
+      // should cost you the boundary, not the run.
+      final r = simulate(CricketDifficulty.easy, 220);
+      expect(
+        r.runs / r.balls,
+        greaterThan(1.2),
+        reason: 'mistimed shots are worth nothing',
       );
     });
 
