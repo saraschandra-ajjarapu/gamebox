@@ -116,7 +116,11 @@ void main() {
     });
 
     test('swinging wildly is out — bowled if straight, caught if wide', () {
-      const miles = idealContact - 0.6;
+      // Derived from the window rather than hard-coded: the windows are in
+      // milliseconds now, so how far "miles early" is depends on how long the
+      // ball is in the air.
+      final windows = TimingWindows.of(CricketDifficulty.easy);
+      final miles = idealContact - windows.surviveFraction(_straight()) - 0.05;
       expect(
         judge(miles, _straight(), CricketDifficulty.easy),
         ShotOutcome.bowled,

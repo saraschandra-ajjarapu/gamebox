@@ -41,10 +41,10 @@ class CricketScreen extends StatefulWidget {
 
 class _CricketScreenState extends State<CricketScreen>
     with SingleTickerProviderStateMixin {
-  static const _waitMs = 700;
-  static const _runUpMs = 950;
-  static const _resolveMs = 480;
-  static const _radarMs = 1500;
+  static const _waitMs = 320;
+  static const _runUpMs = 520;
+  static const _resolveMs = 420;
+  static const _radarMs = 950;
 
   late final Ticker _ticker;
   final _rng = Random();
@@ -142,7 +142,16 @@ class _CricketScreenState extends State<CricketScreen>
         }
         _resolveBall();
       case _Phase.resolve:
-        _enter(_Phase.radar);
+        // The field map earns its interruption when the ball actually went
+        // somewhere. Cutting away after a dot ball is a second of watching
+        // nothing travel, every time, and that adds up to most of an innings.
+        if ((_shot?.distance ?? 0) >= 0.30) {
+          _enter(_Phase.radar);
+        } else if (_innings.isOver) {
+          _finish();
+        } else {
+          _enter(_Phase.waiting);
+        }
       case _Phase.radar:
         if (_innings.isOver) {
           _finish();

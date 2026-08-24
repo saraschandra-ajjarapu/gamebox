@@ -42,9 +42,9 @@ extension CricketDifficultyInfo on CricketDifficulty {
 
   /// Ball-to-ball variation in flight time, as a fraction.
   double get paceSpread => switch (this) {
-    CricketDifficulty.easy => 0.08,
-    CricketDifficulty.medium => 0.16,
-    CricketDifficulty.hard => 0.26,
+    CricketDifficulty.easy => 0.035,
+    CricketDifficulty.medium => 0.10,
+    CricketDifficulty.hard => 0.18,
   };
 }
 
@@ -136,35 +136,67 @@ const double idealContact = (ballStartsAt - batContactAt) / ballTravel;
 double ballPitchPosition(double progress) =>
     ballStartsAt - progress * ballTravel;
 
-/// How generous the timing is, as a fraction of the ball's flight.
+/// How generous the timing is, **in milliseconds**.
 ///
-/// Only two numbers matter, and difficulty changes only these two. Everything
-/// else about a shot -- how far it goes, whether it is in the air, how many
-/// runs it is worth -- follows from them, so the player is being asked exactly
-/// one question ("when?") and it is scored the same way every time.
+/// Deliberately absolute rather than a fraction of the flight. A person's
+/// timing precision is roughly ±60-100ms regardless of how fast the ball is
+/// coming, so expressing the window as a fraction quietly handed the player a
+/// wider window on slow balls than on fast ones — which is why Easy came out
+/// as a boundary on 98% of deliveries. In milliseconds the skill being asked
+/// for is the same one at every speed, and a quicker ball is harder because
+/// there is less time to read it, not because the window shrank.
 class TimingWindows {
-  const TimingWindows({required this.boundary, required this.survive});
+  const TimingWindows({
+    required this.boundaryMs,
+    required this.decayMs,
+    required this.surviveMs,
+  });
 
   /// Time it this well and the ball reaches the rope.
-  final double boundary;
+  final int boundaryMs;
 
-  /// Beyond this the batter has missed badly enough to be out.
-  final double survive;
+  /// How quickly the ball stops travelling once you are outside the boundary
+  /// window.
+  ///
+  /// A separate, much shorter scale than [surviveMs] on purpose. Those two
+  /// answer different questions — "how well did you strike it" and "were you
+  /// dismissed" — and keying the first to the second made every mistimed shot
+  /// worth three runs, because a window wide enough to be forgiving about
+  /// getting out is far too wide to grade contact with.
+  final int decayMs;
+
+  /// Miss by more than this and the batter has played no real shot at all.
+  ///
+  /// Wide on purpose. Being OUT should mean you did not play, not that you
+  /// played imperfectly.
+  final int surviveMs;
 
   static TimingWindows of(CricketDifficulty difficulty) => switch (difficulty) {
     CricketDifficulty.easy => const TimingWindows(
-      boundary: 0.130,
-      survive: 0.380,
+      boundaryMs: 55,
+      decayMs: 200,
+      surviveMs: 850,
     ),
     CricketDifficulty.medium => const TimingWindows(
-      boundary: 0.095,
-      survive: 0.310,
+      boundaryMs: 40,
+      decayMs: 170,
+      surviveMs: 620,
     ),
     CricketDifficulty.hard => const TimingWindows(
-      boundary: 0.070,
-      survive: 0.245,
+      boundaryMs: 28,
+      decayMs: 140,
+      surviveMs: 430,
     ),
   };
+
+  /// The whole flight phase in milliseconds, ball release to the keeper.
+  static double phaseMs(Delivery delivery) => delivery.flightMs * ballTravel;
+
+  double boundaryFraction(Delivery delivery) => boundaryMs / phaseMs(delivery);
+
+  double decayFraction(Delivery delivery) => decayMs / phaseMs(delivery);
+
+  double surviveFraction(Delivery delivery) => surviveMs / phaseMs(delivery);
 }
 
 /// Where the rope is, in the distance units a shot is measured in.
@@ -215,6 +247,8 @@ Shot playShot({
   if (tapAt == null) return _noShot;
 
   final windows = TimingWindows.of(difficulty);
+  final boundaryWindow = windows.boundaryFraction(delivery);
+  final decayWindow = windows.decayFraction(delivery);
   final timing = tapAt - idealContact; // negative = early, under the ball
   final error = timing.abs();
 
@@ -222,11 +256,10 @@ Shot playShot({
   // always reaches the rope and the best ones sail over it; outside, it drops
   // off steadily until the batter has missed altogether.
   double distance;
-  if (error <= windows.boundary) {
-    distance = boundaryDistance + 0.28 * (1 - error / windows.boundary);
+  if (error <= boundaryWindow) {
+    distance = boundaryDistance + 0.28 * (1 - error / boundaryWindow);
   } else {
-    final past =
-        (error - windows.boundary) / (windows.survive - windows.boundary);
+    final past = (error - boundaryWindow) / decayWindow;
     distance = boundaryDistance * (1 - past.clamp(0.0, 1.0));
   }
 
@@ -259,7 +292,7 @@ ShotOutcome outcomeOf(
   if (tapAt == null) return ShotOutcome.bowled;
 
   final windows = TimingWindows.of(difficulty);
-  if ((tapAt - idealContact).abs() > windows.survive) {
+  if ((tapAt - idealContact).abs() > windows.surviveFraction(delivery)) {
     // Swung and missed by a distance. A wild heave at a wide one loops to a
     // fielder; anything straighter crashes into the stumps.
     return delivery.line.abs() > 0.55 ? ShotOutcome.caught : ShotOutcome.bowled;
@@ -269,18 +302,22 @@ ShotOutcome outcomeOf(
     return shot.airborne ? ShotOutcome.six : ShotOutcome.four;
   }
 
-  if (shot.airborne) {
+  // Catchable means lofted AND landing short — in the band where fielders
+  // actually are, not scraping the rope. A shot that nearly cleared the
+  // boundary is "just short, three runs", not a wicket; catching everything
+  // that went up made catches almost a quarter of every innings.
+  if (shot.airborne && shot.distance > 0.40 && shot.distance < 0.88) {
     final catcher = field[nearestFielder(shot.angle, field: field)];
     final underIt =
-        (catcher.radius - shot.distance).abs() < 0.14 &&
-        (catcher.angle - shot.angle).abs() < 0.34;
+        (catcher.radius - shot.distance).abs() < 0.10 &&
+        (catcher.angle - shot.angle).abs() < 0.26;
     if (underIt) return ShotOutcome.caught;
   }
 
   // Short of the rope: the runs are simply how far it got.
-  if (shot.distance >= 0.72) return ShotOutcome.three;
-  if (shot.distance >= 0.48) return ShotOutcome.two;
-  if (shot.distance >= 0.22) return ShotOutcome.single;
+  if (shot.distance >= 0.86) return ShotOutcome.three;
+  if (shot.distance >= 0.62) return ShotOutcome.two;
+  if (shot.distance >= 0.30) return ShotOutcome.single;
   return ShotOutcome.dot;
 }
 
@@ -353,6 +390,7 @@ const standardField = <FieldPosition>[
   FieldPosition('Square leg', -1.45, 0.52),
   FieldPosition('Fine leg', -2.55, 0.88),
   FieldPosition('Long on', -0.30, 0.92),
+  FieldPosition('Long off', 0.10, 0.74),
   FieldPosition('Deep cover', 1.15, 0.90),
 ];
 

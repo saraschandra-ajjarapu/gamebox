@@ -59,6 +59,10 @@ class PitchPainter extends CustomPainter {
   static const _nearHalf = 0.295;
   static const _horizonY = 0.075;
 
+  /// Where the batter stands across the pitch. The stumps are placed relative
+  /// to this rather than tuned separately, so the two cannot drift apart.
+  static const batterU = -0.34;
+
   double _yFor(double t, Size size) {
     // Non-linear so the far half compresses the way a receding plane does.
     final c = pow(t.clamp(0.0, 1.2), 0.72).toDouble();
@@ -170,7 +174,7 @@ class PitchPainter extends CustomPainter {
       canvas.drawRect(r, Paint()..color = c);
 
   void _paintNearStumps(Canvas canvas, Size size) {
-    final base = _point(batContactAt - 0.015, 0.34, size);
+    final base = _point(batContactAt - 0.015, batterU + 0.36, size);
     final h = size.height * 0.074;
     final w = size.width * 0.0115;
     for (var i = 0; i < 3; i++) {
@@ -215,7 +219,7 @@ class PitchPainter extends CustomPainter {
   /// pass drew this figure half again as large and centred on the strip, which
   /// buried the crease lines and the stumps behind it.
   void _paintBatter(Canvas canvas, Size size) {
-    final feet = _point(batContactAt, -0.34, size);
+    final feet = _point(batContactAt, batterU, size);
     final unit = size.height * 0.019;
 
     void block(double x, double y, double w, double h, Color c) => _rect(
@@ -329,7 +333,7 @@ class PitchPainter extends CustomPainter {
           )
         : 0.0;
     final hop = sin(afterBounce * pi) * size.height * 0.03;
-    final radius = size.width * (0.008 + 0.028 * p.clamp(0.0, 1.0));
+    final radius = size.width * (0.017 + 0.023 * p.clamp(0.0, 1.0));
     final centre = Offset(base.dx, base.dy - hop);
 
     // A shadow on the pitch under the ball: without it a hopping ball reads
