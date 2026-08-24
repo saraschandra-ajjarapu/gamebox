@@ -106,11 +106,35 @@ class Delivery {
   }
 }
 
-/// The moment in the ball's flight where bat should meet ball.
+/// Where things sit along the pitch, 0 at the batter's end and 1 at the
+/// bowler's. The painter draws from these and the judging measures from them,
+/// so there is exactly one answer to "where is the ball right now".
 ///
-/// Slightly before the stumps, because a batter plays the ball in front of
-/// their pads rather than on top of the wicket.
-const double idealContact = 0.86;
+/// Having two answers is what made the first version unplayable: the ball was
+/// drawn arriving at the bat at 96% of its flight while the shot was being
+/// judged against 86%, so timing it by eye was always ~160ms too late and
+/// every ball came back BOWLED.
+const double ballStartsAt = 1.0;
+const double batContactAt = 0.05;
+
+/// The ball carries on past the bat to the keeper rather than stopping dead.
+///
+/// This is not decoration. It is the grace period: without it the shot window
+/// slammed shut at the exact instant the ball reached the bat, so a tap a
+/// fraction late was not a mistimed shot, it was no shot at all.
+const double keeperAt = -0.25;
+
+/// Total distance the ball covers, in pitch units.
+const double ballTravel = ballStartsAt - keeperAt;
+
+/// Where along the ball's flight the bat meets it, as a fraction.
+///
+/// Both the painter and [playShot] derive from this, so they cannot disagree.
+const double idealContact = (ballStartsAt - batContactAt) / ballTravel;
+
+/// Where the ball is on the pitch at [progress] through its flight.
+double ballPitchPosition(double progress) =>
+    ballStartsAt - progress * ballTravel;
 
 /// How generous the timing is, as a fraction of the ball's flight.
 ///

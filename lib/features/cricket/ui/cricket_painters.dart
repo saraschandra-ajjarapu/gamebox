@@ -170,9 +170,9 @@ class PitchPainter extends CustomPainter {
       canvas.drawRect(r, Paint()..color = c);
 
   void _paintNearStumps(Canvas canvas, Size size) {
-    final base = _point(0.03, 0.36, size);
-    final h = size.height * 0.088;
-    final w = size.width * 0.013;
+    final base = _point(batContactAt - 0.015, 0.34, size);
+    final h = size.height * 0.074;
+    final w = size.width * 0.0115;
     for (var i = 0; i < 3; i++) {
       final x = base.dx + i * w * 2.3;
       // Cream stumps on a cream pitch vanish, so each gets a shadow.
@@ -210,147 +210,80 @@ class PitchPainter extends CustomPainter {
 
   /// The batter, blocked out the way a low-resolution sprite would be.
   ///
-  /// Drawn large: this is the figure the player is, and at the size the first
-  /// pass used it read as a smudge on the crease rather than a person holding
-  /// a bat.
+  /// Stands at the contact point the judging uses, beside the stumps rather
+  /// than on top of them, at a size that leaves the pitch readable. The first
+  /// pass drew this figure half again as large and centred on the strip, which
+  /// buried the crease lines and the stumps behind it.
   void _paintBatter(Canvas canvas, Size size) {
-    final feet = _point(0.035, -0.46, size);
-    final unit = size.height * 0.0235;
+    final feet = _point(batContactAt, -0.34, size);
+    final unit = size.height * 0.019;
 
-    // Back leg, front leg, torso, arms, helmet — each a plain block.
-    _rect(
+    void block(double x, double y, double w, double h, Color c) => _rect(
       canvas,
-      Rect.fromLTWH(feet.dx, feet.dy - unit * 2.8, unit * 1.05, unit * 2.8),
-      PitchColors.batterDark,
-    );
-    _rect(
-      canvas,
-      Rect.fromLTWH(
-        feet.dx + unit * 1.5,
-        feet.dy - unit * 2.4,
-        unit * 1.0,
-        unit * 2.4,
-      ),
-      PitchColors.batterDark,
-    );
-    _rect(
-      canvas,
-      Rect.fromLTWH(
-        feet.dx - unit * 0.15,
-        feet.dy - unit * 5.6,
-        unit * 2.8,
-        unit * 3.0,
-      ),
-      PitchColors.batter,
-    );
-    _rect(
-      canvas,
-      Rect.fromLTWH(
-        feet.dx + unit * 2.2,
-        feet.dy - unit * 5.2,
-        unit * 0.8,
-        unit * 1.9,
-      ),
-      PitchColors.batterDark,
-    );
-    _rect(
-      canvas,
-      Rect.fromLTWH(
-        feet.dx + unit * 0.35,
-        feet.dy - unit * 7.2,
-        unit * 2.1,
-        unit * 1.7,
-      ),
-      PitchColors.helmet,
-    );
-    // The grille, so the helmet reads as a helmet.
-    _rect(
-      canvas,
-      Rect.fromLTWH(
-        feet.dx + unit * 0.35,
-        feet.dy - unit * 6.1,
-        unit * 2.1,
-        unit * 0.4,
-      ),
-      PitchColors.batterDark,
+      Rect.fromLTWH(feet.dx + unit * x, feet.dy - unit * y, unit * w, unit * h),
+      c,
     );
 
-    // The bat swings through an arc as the shot is played.
+    // Back leg, front leg.
+    block(0, 2.7, 0.95, 2.7, PitchColors.batterDark);
+    block(1.35, 2.4, 0.95, 2.4, PitchColors.batterDark);
+    // Torso, then the shoulder nearest us.
+    block(-0.15, 5.4, 2.6, 2.9, PitchColors.batter);
+    block(2.0, 5.1, 0.75, 1.9, PitchColors.batterDark);
+    // Helmet and grille.
+    block(0.3, 6.9, 1.9, 1.6, PitchColors.helmet);
+    block(0.3, 5.9, 1.9, 0.35, PitchColors.batterDark);
+
+    // The bat hangs from the hands and sweeps through on contact. At rest it
+    // points down at the crease, which is what a batter waiting looks like.
     canvas.save();
-    final pivot = Offset(feet.dx + unit * 2.6, feet.dy - unit * 3.6);
-    canvas.translate(pivot.dx, pivot.dy);
-    canvas.rotate(-0.25 + swing * 2.6);
-    // Handle then blade, so it is a bat rather than a stick.
+    canvas.translate(feet.dx + unit * 2.35, feet.dy - unit * 3.7);
+    canvas.rotate(0.18 + swing * 2.3);
     _rect(
       canvas,
-      Rect.fromLTWH(-unit * 0.22, -unit * 1.5, unit * 0.44, unit * 1.6),
+      Rect.fromLTWH(-unit * 0.2, -unit * 1.3, unit * 0.4, unit * 1.4),
       PitchColors.batterDark,
     );
     _rect(
       canvas,
-      Rect.fromLTWH(-unit * 0.45, unit * 0.1, unit * 0.9, unit * 2.9),
+      Rect.fromLTWH(-unit * 0.42, unit * 0.05, unit * 0.84, unit * 2.7),
       PitchColors.bat,
     );
     canvas.restore();
   }
 
-  /// The bowler at the top of the screen, running in.
+  /// The bowler, running in from the top of the mark and delivering.
+  ///
+  /// The approach covers real ground rather than shuffling on the spot — a
+  /// bowler who does not visibly arrive gives the player no cue that a ball is
+  /// about to be released.
   void _paintBowler(Canvas canvas, Size size) {
-    final t = 1.16 - runUp * 0.16;
-    final feet = _point(t, 0.55, size);
-    final unit = size.height * 0.0075;
+    final t = 1.34 - runUp * 0.30;
+    final feet = _point(t, 0.5, size);
+    final unit = size.height * 0.0105;
 
-    // Legs alternate while approaching so the run-up reads as movement.
-    final stride = sin(runUp * pi * 6) * unit * 0.9;
-    _rect(
+    void block(double x, double y, double w, double h, Color c) => _rect(
       canvas,
-      Rect.fromLTWH(
-        feet.dx - stride,
-        feet.dy - unit * 2.4,
-        unit * 0.9,
-        unit * 2.4,
-      ),
-      PitchColors.bowlerDark,
-    );
-    _rect(
-      canvas,
-      Rect.fromLTWH(
-        feet.dx + stride + unit,
-        feet.dy - unit * 2.4,
-        unit * 0.9,
-        unit * 2.4,
-      ),
-      PitchColors.bowlerDark,
-    );
-    _rect(
-      canvas,
-      Rect.fromLTWH(
-        feet.dx - unit * 0.2,
-        feet.dy - unit * 5.2,
-        unit * 2.4,
-        unit * 2.9,
-      ),
-      PitchColors.bowler,
-    );
-    _rect(
-      canvas,
-      Rect.fromLTWH(
-        feet.dx + unit * 0.4,
-        feet.dy - unit * 6.6,
-        unit * 1.6,
-        unit * 1.5,
-      ),
-      PitchColors.batter,
+      Rect.fromLTWH(feet.dx + unit * x, feet.dy - unit * y, unit * w, unit * h),
+      c,
     );
 
-    // The bowling arm comes over as the delivery is released.
-    final arm = (runUp - 0.72).clamp(0.0, 0.28) / 0.28;
+    // Legs scissor while approaching, then plant for the delivery stride.
+    final running = runUp > 0.02 && runUp < 0.88;
+    final stride = running ? sin(runUp * pi * 7) * 0.9 : 0.7;
+    block(-stride, 2.4, 0.85, 2.4, PitchColors.bowlerDark);
+    block(stride + 0.9, 2.4, 0.85, 2.4, PitchColors.bowlerDark);
+    block(-0.15, 5.1, 2.2, 2.8, PitchColors.bowler);
+    block(0.25, 6.5, 1.5, 1.5, PitchColors.batter);
+
+    // The arm comes over the top through the last of the run-up.
+    final arm = ((runUp - 0.66) / 0.30).clamp(0.0, 1.0);
     canvas.save();
-    canvas.translate(feet.dx + unit * 1.1, feet.dy - unit * 5.0);
-    canvas.rotate(-2.6 + arm * 2.4);
+    canvas.translate(feet.dx + unit * 1.0, feet.dy - unit * 4.9);
+    canvas.rotate(-2.7 + arm * 2.5);
     _rect(
       canvas,
-      Rect.fromLTWH(-unit * 0.3, 0, unit * 0.7, unit * 2.6),
+      Rect.fromLTWH(-unit * 0.28, 0, unit * 0.65, unit * 2.5),
       PitchColors.bowler,
     );
     canvas.restore();
@@ -375,21 +308,47 @@ class PitchPainter extends CustomPainter {
   void _paintBall(Canvas canvas, Size size) {
     final d = delivery!;
     final p = ballProgress!;
-    // t runs from the bowler's end down to the batter as the ball travels.
-    final t = (1 - p).clamp(0.0, 1.0);
-    // The ball drifts from the middle out to the line it pitches on.
-    final u = d.line * min(1.0, p / max(d.bouncePoint, 0.05));
-    final base = _point(t, u.clamp(-1.0, 1.0), size);
+    // The one source of truth for where the ball is, shared with the judging.
+    final t = ballPitchPosition(p);
+    // Drifts from the middle onto the line it pitches on, then holds it.
+    final pitched = ((1 - t) / (1 - d.bouncePoint)).clamp(0.0, 1.0);
+    final straightening = t < d.bouncePoint
+        ? ((d.bouncePoint - t) / max(d.bouncePoint - batContactAt, 0.05)).clamp(
+            0.0,
+            1.0,
+          )
+        : 0.0;
+    final u = (d.line * pitched * (1 - 0.5 * straightening)).clamp(-1.0, 1.0);
+    final base = _point(t.clamp(keeperAt, ballStartsAt), u, size);
 
-    // A hop after the bounce, so the ball is not just sliding along a line.
-    final afterBounce = (p - (1 - d.bouncePoint)).clamp(0.0, 1.0);
-    final hop = sin(afterBounce.clamp(0.0, 1.0) * pi) * size.height * 0.035;
-    final radius = size.width * (0.008 + 0.026 * p);
+    // A hop off the pitch, so the ball is not sliding along a line.
+    final afterBounce = t < d.bouncePoint
+        ? ((d.bouncePoint - t) / max(d.bouncePoint - batContactAt, 0.05)).clamp(
+            0.0,
+            1.0,
+          )
+        : 0.0;
+    final hop = sin(afterBounce * pi) * size.height * 0.03;
+    final radius = size.width * (0.008 + 0.028 * p.clamp(0.0, 1.0));
+    final centre = Offset(base.dx, base.dy - hop);
 
-    canvas.drawCircle(
-      Offset(base.dx, base.dy - hop),
-      radius,
-      Paint()..color = PitchColors.ball,
+    // A shadow on the pitch under the ball: without it a hopping ball reads
+    // as one that simply moved up the screen, which is the wrong direction.
+    canvas.drawOval(
+      Rect.fromCenter(center: base, width: radius * 2.1, height: radius * 0.9),
+      Paint()..color = Colors.black.withValues(alpha: 0.22),
+    );
+    canvas.drawCircle(centre, radius, Paint()..color = PitchColors.ball);
+    // A seam, so a fast ball still reads as a cricket ball.
+    canvas.drawArc(
+      Rect.fromCircle(center: centre, radius: radius * 0.72),
+      -0.6,
+      1.2,
+      false,
+      Paint()
+        ..color = Colors.white70
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = max(1.0, radius * 0.22),
     );
   }
 

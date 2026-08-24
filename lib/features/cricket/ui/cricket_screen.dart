@@ -43,7 +43,7 @@ class _CricketScreenState extends State<CricketScreen>
     with SingleTickerProviderStateMixin {
   static const _waitMs = 700;
   static const _runUpMs = 950;
-  static const _resolveMs = 700;
+  static const _resolveMs = 480;
   static const _radarMs = 1500;
 
   late final Ticker _ticker;
@@ -86,7 +86,7 @@ class _CricketScreenState extends State<CricketScreen>
   int get _phaseMs => switch (_phase) {
     _Phase.waiting => _waitMs,
     _Phase.runUp => _runUpMs,
-    _Phase.flight => _delivery?.flightMs ?? 1000,
+    _Phase.flight => ((_delivery?.flightMs ?? 1000) * ballTravel).round(),
     _Phase.resolve => _resolveMs,
     _Phase.radar => _radarMs,
     _Phase.done => 1,
@@ -130,7 +130,16 @@ class _CricketScreenState extends State<CricketScreen>
       case _Phase.runUp:
         _enter(_Phase.flight);
       case _Phase.flight:
-        // Ran out of ball without a shot being played.
+        // The ball has finished. If a shot was started but the finger is
+        // still down, honour it with whatever direction it has so far — the
+        // timing was already captured at touch-down and throwing it away
+        // would score a played shot as if it had never happened.
+        if (_tapAt != null) {
+          _aim = ShotAim.fromSwipe(
+            _dragTo.dx - _dragFrom.dx,
+            _dragTo.dy - _dragFrom.dy,
+          );
+        }
         _resolveBall();
       case _Phase.resolve:
         _enter(_Phase.radar);
@@ -386,10 +395,26 @@ class _CricketScreenState extends State<CricketScreen>
               CustomPaint(
                 painter: PitchPainter(
                   delivery: _delivery,
-                  ballProgress: _phase == _Phase.flight ? _t : null,
-                  runUp: _phase == _Phase.runUp ? _t : 0,
+                  // The ball keeps travelling while the bat comes through.
+                  // Making it vanish at the instant of the shot was most of
+                  // what read as "no animation": the one moment the player is
+                  // watching for had nothing in it.
+                  ballProgress: switch (_phase) {
+                    _Phase.flight => _t,
+                    _Phase.resolve =>
+                      (_tapAt ?? 1.0) + (1 - (_tapAt ?? 1.0)) * _t,
+                    _ => null,
+                  },
+                  // The bowler stays where he delivered from once the ball
+                  // is gone; snapping him back to the top of his mark
+                  // mid-delivery was the main thing making this look unbuilt.
+                  runUp: switch (_phase) {
+                    _Phase.waiting => 0,
+                    _Phase.runUp => _t,
+                    _ => 1,
+                  },
                   swing: _phase == _Phase.resolve
-                      ? Curves.easeOut.transform(_t)
+                      ? Curves.easeOutCubic.transform(_t)
                       : 0,
                   showMarker:
                       _phase == _Phase.flight || _phase == _Phase.resolve,

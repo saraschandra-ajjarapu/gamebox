@@ -171,6 +171,51 @@ void main() {
     });
   });
 
+  group('the ball is where the game says it is', () {
+    test('the bat meets the ball exactly at the ideal contact point', () {
+      // REGRESSION. The painter drew the ball level with the bat at 96% of
+      // its flight while the judging measured against 86%, so timing a shot
+      // by eye was ~160ms late by construction and every ball came back
+      // BOWLED. Both now derive from the same geometry; this is the assertion
+      // that keeps them derived from it.
+      expect(ballPitchPosition(idealContact), closeTo(batContactAt, 1e-9));
+    });
+
+    test('the ball starts at the bowler and ends past the keeper', () {
+      expect(ballPitchPosition(0), ballStartsAt);
+      expect(ballPitchPosition(1), closeTo(keeperAt, 1e-9));
+    });
+
+    test('a shot timed by eye scores, on every difficulty', () {
+      for (final difficulty in CricketDifficulty.values) {
+        final outcome = judge(idealContact, _straight(), difficulty);
+        expect(outcome.isWicket, isFalse, reason: '$difficulty');
+        expect(outcome.runs, greaterThan(0), reason: '$difficulty');
+      }
+    });
+
+    test('being slightly late is a mistimed shot, never a missed one', () {
+      // The ball carries through to the keeper, which is what leaves room to
+      // be late. Without that the window shut at the instant of contact and
+      // a tap a fraction late scored as if no shot had been played at all.
+      for (final difficulty in CricketDifficulty.values) {
+        for (final late in [0.05, 0.12, 0.20]) {
+          expect(
+            judge(idealContact + late, _straight(), difficulty),
+            isNot(ShotOutcome.bowled),
+            reason: '$difficulty, $late late',
+          );
+        }
+      }
+    });
+
+    test('there is always reachable time left after contact', () {
+      // A tap cannot land after the flight phase ends, so if contact sat too
+      // close to 1.0 the late half of every window would be unreachable.
+      expect(1.0 - idealContact, greaterThan(0.15));
+    });
+  });
+
   group('aiming the shot', () {
     test('a plain tap plays it straight', () {
       expect(ShotAim.fromSwipe(0, 0), ShotAim.straight);
